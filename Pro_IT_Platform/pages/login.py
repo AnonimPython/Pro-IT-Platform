@@ -95,6 +95,11 @@ def login():
             background_color=BLOCK_BACKGROUND,
             color="white",
             justify="between",
+            style={
+                "-webkit-box-shadow": "0px 4px 64px 24px rgba(34, 60, 80, 0.3)",
+                "-moz-box-shadow": "0px 4px 64px 24px rgba(34, 60, 80, 0.3)",
+                "box-shadow": "0px 4px 64px 24px rgba(34, 60, 80, 0.3)",
+            }
         ),
         width="100vw",  
         height="100vh",
