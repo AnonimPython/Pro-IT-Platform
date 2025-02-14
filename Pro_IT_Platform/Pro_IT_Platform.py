@@ -9,6 +9,9 @@ from .ui.colors import *
 #* PAGES
 from .pages.main import main
 from .pages.login import login
+from .pages.task_detail import task_detail
+
+
 
 
 app = rx.App(
@@ -31,6 +34,7 @@ app = rx.App(
 
 app.add_page(main,route="/",title="Main Page")
 app.add_page(login,route="/login",title="Login Page")
+app.add_page(task_detail, route="/task/[task]")  # Страница с заданием
 
 
 
