@@ -4,6 +4,7 @@ assets/external/
 *.db
 
 DOCS.md
+image/DOCS
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
