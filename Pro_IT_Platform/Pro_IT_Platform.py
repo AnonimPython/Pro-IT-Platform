@@ -11,6 +11,8 @@ from .pages.main import main
 from .pages.login import login
 from .pages.task_detail import task_detail
 
+#* ADMIN PAGES
+from .admin.main import main as admin_main
 
 
 
@@ -31,11 +33,15 @@ app = rx.App(
         "width": "100%",
     }
 )
-
+#* USER PAGES
 app.add_page(main,route="/",title="Main Page")
 app.add_page(login,route="/login",title="Login Page")
-app.add_page(task_detail, route="/task/[task]")  # Страница с заданием
+app.add_page(task_detail, route="/task/[task]")
 
+#* ADMIN PAGES
+app.add_page(admin_main,route="/admin",title="Admin Page")
+
+#* API's
 
 
 # pip freeze > requirements.txt
