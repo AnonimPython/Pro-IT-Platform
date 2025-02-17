@@ -28,7 +28,7 @@ app = rx.App(
     #* global styles
     style={
         "font_family": "Rubik",
-        "background_color": BACKGROUND,
+        # "background_color": BACKGROUND,
         "height": "100%",
         "width": "100%",
     }

@@ -103,4 +103,5 @@ def login():
         ),
         width="100vw",  
         height="100vh",
+        background_color=BACKGROUND,
     )
