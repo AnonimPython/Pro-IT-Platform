@@ -1,10 +1,8 @@
 import reflex as rx
-# from .state import AuthState
 from ..ui.colors import *
 from ..ui.admin_pannel import admin_pannel
 
-# rx.button("Выйти", on_click=AuthState.logout), 
-def main_content():
+def groups() -> rx.Component:
     return rx.box(
         rx.hstack(
             admin_pannel(),
@@ -13,7 +11,7 @@ def main_content():
                 rx.box(
                     rx.hstack(
                         #* search
-                        rx.text("Главная страница", font_size="20px"),
+                        rx.text("Группы", font_size="20px"),
                         rx.input(placeholder="Поиск",width="300px",style=input_style),
                         justify="between",
                         width="100%",
@@ -28,12 +26,21 @@ def main_content():
                 width="100%",
                 height="100%",
             ),
+            width="90%",
+            height="90vh",
+            border_radius="20px",
+            color="white",
+            padding="20px",
+            background_color=ADMIN_MAIN_CONTENT,
+            margin="0 auto",  
         ),
-        width="90%",
-        height="90vh",
-        border_radius="20px",
+        
+        
+        width="100%",
+        height="100vh",
+        # border_radius="20px",
         color="white",
         padding="20px",
-        background_color=ADMIN_MAIN_CONTENT,
-        margin="0 auto",  
+        background_color=ADMIN_BACKGROUND_COLOR,
+        margin="0 auto", 
     )

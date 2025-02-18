@@ -26,3 +26,16 @@ TASK_CIRCLE_STYLE = {
     "justify_content": "center",
     "margin_right": "10px",
 }
+
+input_style: dict = {
+    "width": "300px",
+    "height": "50px",
+    "--text-field-focus-color": BORDER_INPUT,
+    "background": INPUT_BACKGROUND,
+    "color": "white",
+    "& input::placeholder": {
+        "padding-left":"10px",
+        "color": "white"
+    },
+    "font-size": "20px",
+    }

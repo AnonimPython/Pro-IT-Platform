@@ -13,6 +13,9 @@ from .pages.task_detail import task_detail
 
 #* ADMIN PAGES
 from .admin.main import main as admin_main
+from .admin.courses import courses
+from .admin.students import students
+from .admin.groups import groups
 
 
 
@@ -39,7 +42,10 @@ app.add_page(login,route="/login",title="Login Page")
 app.add_page(task_detail, route="/task/[task]")
 
 #* ADMIN PAGES
-app.add_page(admin_main,route="/admin",title="Admin Page")
+app.add_page(admin_main,route="/admin",title="Админ панель")
+app.add_page(courses,route="/admin/courses",title="Курсы")
+app.add_page(students,route="/admin/students",title="Ученики")
+app.add_page(groups,route="/admin/groups",title="Группы")
 
 #* API's
 
