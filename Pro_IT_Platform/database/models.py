@@ -1,10 +1,22 @@
 
-from sqlmodel import SQLModel, Field, create_engine
+from typing import List, Optional
+from sqlmodel import Relationship, SQLModel, Field, create_engine
 
 class Personal(SQLModel, table=True):
     __tablename__ = "personal"
     id: int = Field(primary_key=True)
     login: str = Field(index=True)
+
+class Group(SQLModel, table=True):
+    __tablename__ = "groups"
+    id: int = Field(primary_key=True)
+    name: str = Field(index=True) 
+    school: str = Field(index=True) 
+    course: str = Field(index=True)
+    description: str = Field()
+
+    # Связь с моделью Student (один ко многим)
+    students: List["Student"] = Relationship(back_populates="group")
 
 class Courses(SQLModel, table=True):
     __tablename__ = "courses"
@@ -19,7 +31,10 @@ class Student(SQLModel, table=True):
     last_name: str = Field(index=True)
     phone: str = Field(unique=True, index=True)
     school: str = Field(index=True)
-    class_number: int = Field(index=True)
+    class_number: Optional[int] = Field(default=None, index=True)  # Сделали поле опциональным
+
+    group_id: Optional[int] = Field(default=None, foreign_key="groups.id")
+    group: Optional[Group] = Relationship(back_populates="students")
 
 
 DATABASE_URL = "sqlite:///pro-it.db"
