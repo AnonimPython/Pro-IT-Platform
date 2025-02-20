@@ -7,11 +7,12 @@ from ..ui.colors import *
 
 def main():
     return rx.box(
-        rx.cond(
-            AuthState.is_verified,  #* if user is verified
-            main_content(),  #* main content
-            rx.container(auth_form()),  #* form to enter google auth code
-        ),
+        # rx.cond(
+        #     AuthState.is_verified,  #* if user is verified
+        #     main_content(),  #* main content
+        #     rx.container(auth_form()),  #* form to enter google auth code
+        # ),
+        main_content(),
         width="100%",
         height="100vh",
         background_color=ADMIN_BACKGROUND_COLOR,

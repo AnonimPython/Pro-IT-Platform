@@ -39,3 +39,19 @@ input_style: dict = {
     },
     "font-size": "20px",
     }
+
+admin_input_style: dict = {
+    "width": "200px",
+    "height": "50px",
+    "border-radius": "10px",
+    "border": f"1px solid {ADMIN_YELLOW}",
+    "--text-field-focus-color": ADMIN_YELLOW,
+    "background": ADMIN_MAIN_CONTENT,
+    "color": "white",
+    "& input::placeholder": {
+        "padding-left":"10px",
+        "color": "white"
+    },
+    "font-size": "20px", 
+    "margin": "10px",
+}

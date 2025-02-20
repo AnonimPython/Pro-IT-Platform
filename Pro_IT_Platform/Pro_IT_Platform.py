@@ -48,7 +48,7 @@ app.add_page(students,route="/admin/students",title="Ученики")
 app.add_page(groups,route="/admin/groups",title="Группы")
 app.add_page(
     group_page,
-    route="/group/[group_id]",
+    route="/admin/groups/[group_id]",
     on_load=GroupState.load_group
 )
 #* API's

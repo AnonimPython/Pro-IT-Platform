@@ -14,6 +14,7 @@ class Group(SQLModel, table=True):
     school: str = Field(index=True) 
     course: str = Field(index=True)
     description: str = Field()
+    teacher: str = Field(index=True)
 
     # Связь с моделью Student (один ко многим)
     students: List["Student"] = Relationship(back_populates="group")

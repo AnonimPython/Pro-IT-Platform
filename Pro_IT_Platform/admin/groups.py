@@ -14,6 +14,8 @@ class GroupState(rx.State):
     new_group_school: str = ""
     new_group_course: str = ""
     new_group_description: str = ""
+    new_teacher: str = ""
+    
     new_student_first_name: str = ""
     new_student_last_name: str = ""
     new_student_phone: str = ""
@@ -44,6 +46,7 @@ class GroupState(rx.State):
                 school=self.new_group_school,
                 course=self.new_group_course,
                 description=self.new_group_description,
+                teacher=self.new_teacher,
             )
             session.add(group)
             session.commit()
@@ -54,7 +57,20 @@ class GroupState(rx.State):
             self.new_group_school = ""
             self.new_group_course = ""
             self.new_group_description = ""
-
+            self.new_teacher = ""
+            
+    def delete_student(self, student_id: int):
+        """Удалить студента по его ID."""
+        with Session(engine) as session:
+            student = session.get(Student, student_id)
+            if student:
+                session.delete(student)
+                session.commit()
+                self.load_group()  # Перезагрузить список студентов после удаления
+                return rx.toast("Студент успешно удален")
+            else:
+                return rx.toast("Студент не найден")
+            
     def add_student(self):
         if not self.current_group:
             return
@@ -62,7 +78,7 @@ class GroupState(rx.State):
         try:
             class_number = int(self.new_student_class_number) if self.new_student_class_number else None
         except ValueError:
-            return rx.window_alert("Класс должен быть числом")
+            return rx.toast("Класс должен быть числом")
             
         with Session(engine) as session:
             student = Student(
@@ -85,7 +101,7 @@ class GroupState(rx.State):
                 self.new_student_school = ""
                 self.new_student_class_number = ""
             except Exception as e:
-                return rx.window_alert(f"Ошибка при добавлении студента: {str(e)}")
+                return rx.toast(f"Ошибка при добавлении студента: {str(e)}")
 
 def add_group_dialog() -> rx.Component:
     return rx.dialog.root(
@@ -107,16 +123,29 @@ def add_group_dialog() -> rx.Component:
                         placeholder="Школа",
                         value=GroupState.new_group_school,
                         on_change=GroupState.set_new_group_school,
+                        required=True,
+                        
                     ),
                     rx.input(
                         placeholder="Курс",
                         value=GroupState.new_group_course,
                         on_change=GroupState.set_new_group_course,
+                        required=True,
+                        
+                    ),
+                    rx.input(
+                        placeholder="Преподаватель",
+                        value=GroupState.new_teacher,
+                        on_change=GroupState.set_new_teacher,
+                        required=True,
+                        
                     ),
                     rx.input(
                         placeholder="Описание",
                         value=GroupState.new_group_description,
                         on_change=GroupState.set_new_group_description,
+                        required=True,
+                        
                     ),
                     rx.flex(
                         rx.dialog.close(
@@ -141,54 +170,138 @@ def student_list() -> rx.Component:
     return rx.cond(
         GroupState.students,
         rx.vstack(
-            rx.text("Список студентов:", font_size="18px", margin_top="20px"),
-            rx.foreach(
-                GroupState.students,
-                lambda student: rx.text(f"{student.first_name} {student.last_name}"),
+            rx.text("Список студентов", font_size="30px", margin_bottom="20px", weight="bold"),
+            rx.scroll_area(
+                rx.flex(
+                    rx.foreach(
+                        GroupState.students,
+                        lambda student:rx.box(
+                            rx.button(
+                                "Х",
+                                on_click=lambda: GroupState.delete_student(student.id),
+                                background_color="red",
+                                color="white",
+                                border_radius="50%",
+                                size="1",
+                                _hover={"background_color": "darkred"},
+                            ),
+                            rx.text(
+                                f"{student.first_name} {student.last_name} {student.phone}",
+                                font_size="25px",
+                            ),
+                            #! create login and password for acccount
+                        ),
+                            
+                    ),
+                    direction="column",
+                    spacing="4",
+                ),
+                scrollbars="vertical",
+                type="scroll",
+                height="100%",
             ),
+            
+            padding="20px",
         ),
+        #! reamek design
         rx.text("В группе нет студентов", font_size="16px", margin_top="20px"),
     )
 
 def add_student_form() -> rx.Component:
-    return rx.vstack(
-        rx.input(
-            placeholder="Имя",
-            value=GroupState.new_student_first_name,
-            on_change=GroupState.set_new_student_first_name,
-            style=input_style,
+    return rx.dialog.root(
+        rx.dialog.trigger(
+            rx.button(
+                "Добавить ученика",
+                background_color=LINK_BACKGROUND_COLOR,
+                border=f"1px solid {ADMIN_YELLOW}",
+            )
         ),
-        rx.input(
-            placeholder="Фамилия",
-            value=GroupState.new_student_last_name,
-            on_change=GroupState.set_new_student_last_name,
-            style=input_style,
+        rx.dialog.content(
+            rx.dialog.title("Добавить ученика"),
+            rx.dialog.description(
+                "В данном окне введите правильные значения для добавления ребенка в группу",
+            ),
+            rx.vstack(
+                rx.hstack(
+                rx.input(
+                    placeholder="Имя",
+                    value=GroupState.new_student_first_name,
+                    on_change=GroupState.set_new_student_first_name,
+                    style=admin_input_style
+                ),
+                rx.input(
+                    placeholder="Фамилия",
+                    value=GroupState.new_student_last_name,
+                    on_change=GroupState.set_new_student_last_name,
+                    style=admin_input_style,
+                ),
+                ),
+            
+            rx.input(
+                placeholder="Телефон",
+                value=GroupState.new_student_phone,
+                on_change=GroupState.set_new_student_phone,
+                style=admin_input_style,
+            ),
+            rx.hstack(
+                rx.input(
+                    placeholder="Школа",
+                    value=GroupState.new_student_school,
+                    on_change=GroupState.set_new_student_school,
+                    style=admin_input_style,
+                ),
+                rx.input(
+                    placeholder="Класс",
+                    value=GroupState.new_student_class_number,
+                    on_change=GroupState.set_new_student_class_number,
+                    type_="number",
+                    min_="1",
+                    max_="11",
+                    style=admin_input_style,
+                ),
+            ),
+            
+            rx.hstack(
+                rx.dialog.close(
+                    rx.button(
+                        "Отмена",
+                        size="2", 
+                        color="red",  
+                        background_color="#ff00001a",
+                        border="1px solid red",
+                        margin="5px",
+                        transition="all 0.2s ease-in-out",
+                        _hover={
+                            "background_color": "#851f2f",
+                        }
+                    ),
+                ),
+                rx.button(
+                    "Добавить",
+                    size="2", 
+                    color="green",  
+                    border="1px solid green",
+                    background_color="#00ff001a",
+                    margin="5px",
+                    transition="all 0.2s ease-in-out",
+                    _hover={
+                            "background_color": "#56d551",
+                    },
+                    on_click=GroupState.add_student
+                ),
+            ),
+            spacing="2",
+            margin_top="20px",
         ),
-        rx.input(
-            placeholder="Телефон",
-            value=GroupState.new_student_phone,
-            on_change=GroupState.set_new_student_phone,
-            style=input_style,
+            style={
+                "background": ADMIN_MAIN_CONTENT,  
+                "color": "white" 
+            },
         ),
-        rx.input(
-            placeholder="Школа",
-            value=GroupState.new_student_school,
-            on_change=GroupState.set_new_student_school,
-            style=input_style,
-        ),
-        rx.input(
-            placeholder="Класс",
-            value=GroupState.new_student_class_number,
-            on_change=GroupState.set_new_student_class_number,
-            type_="number",
-            min_="1",
-            max_="11",
-            style=input_style,
-        ),
-        rx.button("Добавить студента", on_click=GroupState.add_student),
-        spacing="2",
-        margin_top="20px",
+        color_scheme="dark",
     )
+
+
 
 def groups() -> rx.Component:
     return rx.box(
@@ -209,19 +322,52 @@ def groups() -> rx.Component:
                 rx.box(
                     rx.vstack(
                         add_group_dialog(),
-                        rx.foreach(
-                            GroupState.groups,
-                            lambda group: rx.link(
-                                rx.vstack(
-                                    rx.text(f"Группа: {group.name}"),
-                                    rx.text(f"Школа: {group.school}"),
-                                    rx.text(f"Курс: {group.course}"),
-                                    rx.text(f"Описание: {group.description}"),
+                        rx.box(
+                            rx.scroll_area(
+                                rx.flex(
+                                    rx.foreach(
+                                        GroupState.groups,
+                                        lambda group: rx.link(
+                                            rx.vstack(
+                                                rx.text(f"Группа: {group.name}"),
+                                                rx.text(f"Школа: {group.school}"),
+                                                rx.text(f"Курс: {group.course}"), 
+                                                rx.text(f"Описание: {group.description}"),
+                                                rx.text(f"Преподаватель: {group.teacher}"),
+                                                background=ADMIN_MAIN_CONTENT,
+                                                padding="10px",
+                                                border_radius="10px",
+                                                width="300px",
+                                            ),
+                                            href=f"/admin/groups/{group.id}",
+                                        ),
+                                    ),
+                                    flex_wrap="wrap",
+                                    # grid_template_columns=[
+                                    #     "repeat(2, 1fr)",  
+                                    #     "repeat(2, 1fr)",  
+                                    #     "repeat(2, 1fr)",  
+                                    #     "repeat(3, 1fr)",  
+                                    #     "repeat(3, 1fr)",  
+                                    #     "repeat(3, 1fr)",
+                                    # ],
+                                    # columns="3",
+                                    spacing="4",
+                                    width="100%",
                                 ),
-                                href=f"/group/{group.id}",
+                                type="hover", 
+                                scrollbars="vertical",
+                                style={"height": "70vh"},
+                                width="100%",
                             ),
+                            width="100%",
                         ),
+                        
+                        width="100%",
+                        height="100%",
                     ),
+                    height="100%",
+                    width="100%",
                 ),
                 padding="10px",
                 border_radius="5px",
@@ -253,21 +399,40 @@ def group_page() -> rx.Component:
             rx.vstack(
                 rx.cond(
                     GroupState.current_group,
-                    rx.vstack(
-                        rx.text(f"Группа: {GroupState.current_group.name}", font_size="20px"),
-                        rx.text(f"Школа: {GroupState.current_group.school}"),
-                        rx.text(f"Курс: {GroupState.current_group.course}"),
-                        rx.text(f"Описание: {GroupState.current_group.description}"),
-                        student_list(),
-                        add_student_form(),
+                    rx.hstack(
+                        rx.vstack(
+                            rx.text(f"Группа: {GroupState.current_group.name}", font_size="20px"),
+                            rx.text(f"Школа: {GroupState.current_group.school}"),
+                            rx.text(f"Преподаватель: {GroupState.current_group.teacher}"),
+                            #! remake link to Yandex maps| 
+                            # rx.link(
+                            #     f"Школа: {GroupState.current_group.school}",
+                            #     href=f"https://yandex.ru/maps/?text={GroupState.current_group.school}",
+                            #     target="_blank",
+                            # ),
+                            rx.text(f"Курс: {GroupState.current_group.course}"),
+                            rx.text(f"Описание: {GroupState.current_group.description}"),
+                            add_student_form(),
+                            spacing="4",
+                        ),
+                        rx.box(
+                            student_list(),  
+                            margin_left="30%",  
+                            border_radius="15px",
+                            min_width="50%",
+                            background_color=ADMIN_MAIN_CONTENT
+                        ),
+                        
+                        width="100%",
                     ),
                     rx.text("Группа не найдена", font_size="20px"),
                 ),
-                padding="10px",
+                padding="40px",
                 border_radius="5px",
                 background_color="#1c1e21", 
                 width="100%",
                 height="100%",
+                
             ),
             width="90%",
             height="90vh",
