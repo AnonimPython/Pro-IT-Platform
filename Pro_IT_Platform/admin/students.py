@@ -6,11 +6,10 @@ from sqlmodel import Session, select
 from ..database.models import Student, engine
 
 class StudentState(rx.State):
-    """Состояние для управления студентами."""
     students: List[Student] = []
 
     def load_students(self):
-        """Загрузить всех студентов из базы данных."""
+        """Load all students in the database"""
         with Session(engine) as session:
             self.students = session.exec(select(Student)).all()
 
@@ -48,7 +47,7 @@ def students() -> rx.Component:
                                         background=ADMIN_MAIN_CONTENT,
                                         _hover={"background": ADMIN_YELLOW},
                                     ),
-                                    href=f"/admin/groups/{student.group_id}",  # Ссылка на страницу группы
+                                    href=f"/admin/groups/{student.group_id}",  #* link to group
                                 ),
                             ),
                             direction="column",
@@ -80,5 +79,5 @@ def students() -> rx.Component:
         padding="20px",
         background_color=ADMIN_BACKGROUND_COLOR,
         margin="0 auto",
-        on_mount=StudentState.load_students,  # Загрузить студентов при монтировании компонента
+        on_mount=StudentState.load_students,  #* load all students
     )
