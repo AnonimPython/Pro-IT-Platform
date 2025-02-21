@@ -60,48 +60,62 @@ class GroupState(rx.State):
             self.new_teacher = ""
             
     def delete_student(self, student_id: int):
-        """Удалить студента по его ID."""
+        """Delete studer by ID."""
         with Session(engine) as session:
             student = session.get(Student, student_id)
             if student:
                 session.delete(student)
                 session.commit()
-                self.load_group()  # Перезагрузить список студентов после удаления
+                self.load_group()  #* reload the group list after delete
                 return rx.toast("Студент успешно удален")
             else:
                 return rx.toast("Студент не найден")
             
     def add_student(self):
+        """Adding a student to the group"""
+        #* check to empty input's
+        if (
+            not self.new_student_first_name
+            or not self.new_student_last_name
+            or not self.new_student_phone
+            or not self.new_student_school
+            or not self.new_student_class_number
+        ):
+            return rx.toast.warning("Заполните все поля")
+
         if not self.current_group:
-            return
-            
+            return rx.toast.error("Группа не выбрана")
+
+        #* protect for class number if input take str value
         try:
-            class_number = int(self.new_student_class_number) if self.new_student_class_number else None
+            class_number = int(self.new_student_class_number)
         except ValueError:
-            return rx.toast("Класс должен быть числом")
-            
+            return rx.toast.error("Класс должен быть числом")
+
+        #* adding student to the group
         with Session(engine) as session:
             student = Student(
                 first_name=self.new_student_first_name,
                 last_name=self.new_student_last_name,
                 phone=self.new_student_phone,
                 school=self.new_student_school,
-                class_number=class_number,  # Теперь может быть None
-                group_id=int(self.group_id)
+                class_number=class_number,
+                group_id=int(self.group_id),
             )
             session.add(student)
             try:
                 session.commit()
                 session.refresh(student)
-                self.load_group()
-                # Reset form fields
+                self.load_group()  #* reload the group list after delete
+                # Reset values from input's
                 self.new_student_first_name = ""
                 self.new_student_last_name = ""
                 self.new_student_phone = ""
                 self.new_student_school = ""
                 self.new_student_class_number = ""
+                return rx.toast.success("Студент успешно добавлен")
             except Exception as e:
-                return rx.toast(f"Ошибка при добавлении студента: {str(e)}")
+                return rx.toast.error(f"Ошибка при добавлении студента: {str(e)}")
 
 def add_group_dialog() -> rx.Component:
     return rx.dialog.root(
