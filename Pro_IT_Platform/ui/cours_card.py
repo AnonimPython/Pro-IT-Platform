@@ -20,6 +20,6 @@ def cours_card(text:str=None,link:str="#"):
             align_items="center",
             transition="0.1s",
             _hover={"border": f"{ADMIN_YELLOW} 2px solid"},
-            
+            is_external=True,
             href=link,
     )

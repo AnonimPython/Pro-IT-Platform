@@ -26,11 +26,12 @@ def courses() -> rx.Component:
                 rx.box(
                       rx.grid(
                         #* card
-                        cours_card(text="Scratch", link="#"),
-                        cours_card(text="Roblox"),
-                        cours_card(text="Python 1st"),
+                        cours_card(text="Scratch", link="https://drive.google.com/drive/folders/1ON1vlo9BESpLRiH_9ktADKvsuhcOI--l?clckid=3b2980a1"),
+                        cours_card(text="Roblox",link="https://drive.google.com/drive/folders/1E87-_MSrNjbnxzJteNkk6kgi2NBMpu-i?clckid=3b2980a1"),
+                        cours_card(text="Python 1st",link="https://drive.google.com/drive/folders/16hET92-hcYRydvxd8MEWqnEObbyNUFeZ?clckid=3b2980a1"),
                         cours_card(text="Python 2nd"),
-                        cours_card(text="Robotiks"),
+                        cours_card(text="Robotics",link="https://drive.google.com/drive/folders/1lIdyMkBeE69h6JR7H6lAHHtQTBba0fgl?clckid=3b2980a1"),
+                        cours_card(text="GDevelop",link="https://drive.google.com/drive/folders/1VGZGwUWFv39hSRJgfqTgCQ1FSCi9_lmf?clckid=3b2980a1"),
                         columns="3",
                         gap="1rem",
                         # spacing_x="2",
