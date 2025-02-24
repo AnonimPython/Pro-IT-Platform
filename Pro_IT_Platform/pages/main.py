@@ -51,9 +51,17 @@ def module_buttons():
     return rx.vstack(
         *[
             rx.button(
-                f"{module['id']}-{module['name']}",  # Display module ID and name
+                # f"{module['id']}-{module['name']}",  # Display module ID and name
+                rx.text(f"{module['name']}", font_size="20px"),  # Display module name
                 on_click=lambda module_id=module["id"]: State.select_module(module_id),  # Handle module selection
-                margin_top="20px",  # Add margin between buttons
+                margin_top="20px",
+                background=BUTTON_BACKGROUND,
+                border=f"{BLOCK_BACKGROUND} 1px solid",
+                width="100%",
+                height="50px",
+                padding="10px",
+                border_radius="10px",
+                
             )
             #* we using for bucause we need to create 5 moduls. It's simple way to create this thing
             for module in MODULES 
@@ -105,7 +113,7 @@ def selected_module_content():
 def main():
     """Main component representing the entire page."""
     return rx.vstack(
-        # Header section
+        #* Header section
         rx.box(
             rx.flex(
                 #* logo and title
@@ -114,35 +122,48 @@ def main():
                     rx.heading("Pro IT", font_size="2em"),  
                     align="center", 
                 ),
-                #* username
+                #* username | exit button
                 rx.box(
-                    rx.menu.root(
-                        rx.menu.trigger(
-                            rx.button(
-                                rx.text("Никита Сидоров", font_size="30px", color="white"), 
-                                variant="soft",  
-                                height="auto",  
-                                background_color=GRAY_LAVANDER, 
-                            ),
+                    rx.hstack(
+                        rx.text(
+                            "Никита Сидоров",
+                            font_size="25px", 
+                            color="white",
+                            background_color=GRAY_LAVANDER, 
+                            padding="5px",
+                            border_radius="10px",
                         ),
-                        rx.menu.content(
-                            rx.menu.item(
-                                "Выход", 
-                                color="red",  
-                                _hover={"background_color": "#ff00001a"},  
+                        
+                        #* exit button
+                        rx.box(
+                            rx.icon(
+                                tag="log-out",
+                                color="red",
                             ),
-                            width="100%",  
+                            background="#ff00001a",
+                            width="50px", 
+                            height="50px",
+                            border_radius="10px",
+                            display="flex", 
+                            justify_content="center",
+                            align_items="center",
+                            _hover={"background_color": "#a92525"},
+                            transition="0.2s linear"
                         ),
+                        
                     ),
+                    
                 ),
                 justify="between",  
                 align="center",
             ),
             width="100%", 
+            align="center",
+            align_self="center",
         ),
 
        
-        rx.separator(size="4", background=SEPARATOR_COLOR, margin_top="20px"),
+        rx.separator(size="4", background=SEPARATOR_COLOR, margin_top="10px"),
 
         #* main content
         rx.hstack(
