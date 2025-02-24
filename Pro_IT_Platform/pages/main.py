@@ -3,13 +3,49 @@ from ..ui.colors import *
 
 
 #! TEST DATA
-# Data structure for modules and their tasks 
 MODULES = [
-    {"id": 1, "name": "Структура", "tasks": ["Задание 1", "Задание 2", "Задание 3"]},
-    {"id": 2, "name": "База", "tasks": ["Задание 1", "Задание 2"]},
-    {"id": 3, "name": "Учеба", "tasks": ["Задание 1", "Задание 2", "Задание 3", "Задание 4"]},
-    {"id": 4, "name": "Перекус", "tasks": ["Задание 1"]},
-    {"id": 5, "name": "Выпивка", "tasks": ["Задание 1", "Задание 2"]},
+    {
+        "id": 1,
+        "name": "Структура",
+        "tasks": [
+            {"id": 1, "text": "Изучите структуру проекта."},
+            {"id": 2, "text": "Создайте новую ветку в Git."},
+            {"id": 3, "text": "Напишите документацию."},
+        ],
+    },
+    {
+        "id": 2,
+        "name": "База",
+        "tasks": [
+            {"id": 1, "text": "Настройте базу данных."},
+            {"id": 2, "text": "Создайте таблицы."},
+        ],
+    },
+    {
+        "id": 3,
+        "name": "Учеба",
+        "tasks": [
+            {"id": 1, "text": "Прочитайте главу 1 учебника."},
+            {"id": 2, "text": "Решите задачи из главы 1."},
+            {"id": 3, "text": "Подготовьтесь к тесту."},
+            {"id": 4, "text": "ыНапишите конспект."},
+        ],
+    },
+    {
+        "id": 4,
+        "name": "Перекус",
+        "tasks": [
+            {"id": 1, "text": "Задание 1: Приготовьте бутерброд."},
+        ],
+    },
+    {
+        "id": 5,
+        "name": "Выпивка",
+        "tasks": [
+            {"id": 1, "text": "Задание 1: Купите напитки."},
+            {"id": 2, "text": "Задание 2: Разлейте по бокалам."},
+        ],
+    },
 ]
 
 class State(rx.State):
@@ -18,16 +54,18 @@ class State(rx.State):
 
     # State variable to track the currently selected task
     selected_task: str = ""
+    selected_description: str = ""
 
     def select_module(self, module: int):
         """Handler for selecting a module."""
         self.selected_module = module
 
-    def select_task(self, task: str):
+    def select_task(self, task_number: str, task_description: str):
         """Handler for selecting a task. Redirects to the task detail page."""
-        self.selected_task = task
+        self.selected_task = task_number
+        self.selected_description = task_description
         #* Redirect to the task detail page| take № of module and № of task
-        return rx.redirect(f"/task/{task}")
+        return rx.redirect(f"/task/{task_number}")
 
 
 def task_circles(tasks):
@@ -36,9 +74,14 @@ def task_circles(tasks):
         *[
             rx.box(
                 rx.button(
-                    rx.text(task),  #* Display the task name
-                    on_click=lambda task=task: State.select_task(task),  #* Handle task selection
+                    rx.text(f"Задание {task['id']}"),  #* Display only the task name (e.g., "Задание 1")
+                    on_click=lambda task=task: State.select_task(str(task["id"]), task["text"]),  #* Pass task number and full text
                     **TASK_CIRCLE_STYLE,  #circle style
+                    _hover={
+                        "background": INPUT_BACKGROUND,
+                        "color":"white", 
+                    },
+                    transition="0.2s linear",
                 ),
             )
             for task in tasks  #* Loop through each task in the list
@@ -52,15 +95,21 @@ def module_buttons():
         *[
             rx.button(
                 # f"{module['id']}-{module['name']}",  # Display module ID and name
-                rx.text(f"{module['name']}", font_size="20px"),  # Display module name
+                rx.text(f"{module['name']}", font_size="20px",weight="bold"),  # Display module name
                 on_click=lambda module_id=module["id"]: State.select_module(module_id),  # Handle module selection
                 margin_top="20px",
-                background=BUTTON_BACKGROUND,
-                border=f"{BLOCK_BACKGROUND} 1px solid",
+                background=GRAY_LAVANDER,
+                # border=f"{BLOCK_BACKGROUND} 2px solid",
                 width="100%",
+                color=BLOCK_BACKGROUND,
                 height="50px",
                 padding="10px",
                 border_radius="10px",
+                _hover={
+                        "background": INPUT_BACKGROUND,
+                        "color":"white", 
+                    },
+                transition="0.2s linear",
                 
             )
             #* we using for bucause we need to create 5 moduls. It's simple way to create this thing
@@ -129,6 +178,7 @@ def main():
                             "Никита Сидоров",
                             font_size="25px", 
                             color="white",
+                            height="100%",
                             background_color=GRAY_LAVANDER, 
                             padding="5px",
                             border_radius="10px",
@@ -136,10 +186,14 @@ def main():
                         
                         #* exit button
                         rx.box(
-                            rx.icon(
+                            rx.link(
+                               rx.icon(
                                 tag="log-out",
                                 color="red",
                             ),
+                               href="/login" 
+                            ),
+                            
                             background="#ff00001a",
                             width="50px", 
                             height="50px",
@@ -148,7 +202,7 @@ def main():
                             justify_content="center",
                             align_items="center",
                             _hover={"background_color": "#a92525"},
-                            transition="0.2s linear"
+                            transition="0.2s linear",
                         ),
                         
                     ),

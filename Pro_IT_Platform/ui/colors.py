@@ -16,11 +16,12 @@ LINK_BACKGROUND_COLOR = "#363538"
 
 #*  STYLES
 TASK_CIRCLE_STYLE = {
-    "width": "50px",
-    "height": "50px",
-    "border_radius": "50%",
-    "background_color": "blue",
-    "color": "white",
+    "width": "300px",
+    "height": "150px",
+    "border_radius": "10px",
+    "background_color": GRAY_LAVANDER,
+    "color": BLOCK_BACKGROUND,
+    "font_size": "30px",
     "display": "flex",
     "align_items": "center",
     "justify_content": "center",
