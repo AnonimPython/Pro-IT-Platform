@@ -28,22 +28,22 @@ MODULES = [
             {"id": 1, "text": "Прочитайте главу 1 учебника."},
             {"id": 2, "text": "Решите задачи из главы 1."},
             {"id": 3, "text": "Подготовьтесь к тесту."},
-            {"id": 4, "text": "ыНапишите конспект."},
+            {"id": 4, "text": "Напишите конспект."},
         ],
     },
     {
         "id": 4,
         "name": "Перекус",
         "tasks": [
-            {"id": 1, "text": "Задание 1: Приготовьте бутерброд."},
+            {"id": 1, "text": "Приготовьте бутерброд."},
         ],
     },
     {
         "id": 5,
         "name": "Выпивка",
         "tasks": [
-            {"id": 1, "text": "Задание 1: Купите напитки."},
-            {"id": 2, "text": "Задание 2: Разлейте по бокалам."},
+            {"id": 1, "text": "Купите напитки."},
+            {"id": 2, "text": "Разлейте по бокалам."},
         ],
     },
 ]
@@ -99,7 +99,6 @@ def module_buttons():
                 on_click=lambda module_id=module["id"]: State.select_module(module_id),  # Handle module selection
                 margin_top="20px",
                 background=GRAY_LAVANDER,
-                # border=f"{BLOCK_BACKGROUND} 2px solid",
                 width="100%",
                 color=BLOCK_BACKGROUND,
                 height="50px",
@@ -124,33 +123,33 @@ def selected_module_content():
             # Check if the selected module is 1
             State.selected_module == 1,
             rx.vstack(
-                rx.text("Модуль 1 выбран - Структура", font_size="30px"),  # Display module name
+                rx.text(MODULES[0]["name"], font_size="30px"),  # Display module name
                 task_circles(MODULES[0]["tasks"]),  # Display tasks for module 1
             ),
             rx.cond(
                 # Check if the selected module is 2
                 State.selected_module == 2,
                 rx.vstack(
-                    rx.text("Модуль 2 выбран - База", font_size="30px"),  # Display module name
+                    rx.text(MODULES[1]["name"], font_size="30px"),  # Display module name
                     task_circles(MODULES[1]["tasks"]),  # Display tasks for module 2
                 ),
                 rx.cond(
                     # Check if the selected module is 3
                     State.selected_module == 3,
                     rx.vstack(
-                        rx.text("Модуль 3 выбран - Учеба", font_size="30px"),  # Display module name
+                        rx.text(MODULES[2]["name"], font_size="30px"),  # Display module name
                         task_circles(MODULES[2]["tasks"]),  # Display tasks for module 3
                     ),
                     rx.cond(
                         # Check if the selected module is 4
                         State.selected_module == 4,
                         rx.vstack(
-                            rx.text("Модуль 4 выбран - Перекус", font_size="30px"),  # Display module name
+                            rx.text(MODULES[3]["name"], font_size="30px"),  # Display module name
                             task_circles(MODULES[3]["tasks"]),  # Display tasks for module 4
                         ),
                         rx.vstack(
                             # Default case: module 5
-                            rx.text("Модуль 5 выбран - Выпивка", font_size="30px"),  # Display module name
+                            rx.text(MODULES[4]["name"], font_size="30px"),  # Display module name
                             task_circles(MODULES[4]["tasks"]),  # Display tasks for module 5
                         ),
                     ),

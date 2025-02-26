@@ -23,6 +23,7 @@ from .admin.main import main as admin_main
 from .admin.courses import courses
 from .admin.students import students
 from .admin.groups import GroupState, groups, group_page
+from .admin.personal import personal
 
 
 
@@ -53,6 +54,7 @@ app.add_page(admin_main,route="/admin",title="Админ панель")
 app.add_page(courses,route="/admin/courses",title="Курсы")
 app.add_page(students,route="/admin/students",title="Ученики")
 app.add_page(groups,route="/admin/groups",title="Группы")
+app.add_page(personal,route="/admin/personal",title="Персонал")
 app.add_page(
     group_page,
     route="/admin/groups/[group_id]",

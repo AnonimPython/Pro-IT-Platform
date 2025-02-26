@@ -6,6 +6,9 @@ class Personal(SQLModel, table=True):
     __tablename__ = "personal"
     id: int = Field(primary_key=True)
     login: str = Field(index=True)
+    full_name: str = Field(index=True)
+    role: str = Field()
+    phone: str = Field()
 
 class Group(SQLModel, table=True):
     __tablename__ = "groups"

@@ -11,6 +11,7 @@ nav_items = [
     {"icon": "users", "text": "Ученики", "href": "/admin/students"},
     {"icon": "boxes", "text": "Группы", "href": "/admin/groups"},
     {"icon": "presentation", "text": "Курсы", "href": "/admin/courses"},
+    {"icon": "person-standing", "text": "Персонал", "href": "/admin/personal"},
     {"icon": "archive-restore", "text": "Рассылки", "href": "/admin/mailing"}, #! make
 ]
 
