@@ -7,8 +7,8 @@ from ..admin.state import AuthState
 def admin_pannel():
     return rx.vstack(
                 rx.heading("Pro-IT", font_size="30px"),
-                rx.text("EVG PYTHON", font_size="25px"),
-                rx.text("Супер-Админ",color=ADMIN_YELLOW),
+                rx.text(AuthState.current_user_name, font_size="25px"),
+                rx.text(AuthState.current_user_role,color=ADMIN_YELLOW),
                 #* links
                 admin_links(),
                 rx.button(
