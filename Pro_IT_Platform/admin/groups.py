@@ -1,7 +1,7 @@
 from typing import List, Optional
 import reflex as rx
 from sqlmodel import Session, select
-from ..database.models import Group, Student, engine
+from ..database.models import Group, Student, Personal, engine
 from ..ui.colors import *
 from ..ui.admin_pannel import admin_pannel
 
@@ -10,12 +10,16 @@ class GroupState(rx.State):
     groups: List[Group] = []
     current_group: Optional[Group] = None
     students: List[Student] = []
+    teachers: List[str] = []  # Список преподавателей для выпадающего списка
+
+    # Поля для создания новой группы
     new_group_name: str = ""
     new_group_school: str = ""
     new_group_course: str = ""
     new_group_description: str = ""
-    new_teacher: str = ""
-    
+    new_teacher: str = ""  # Выбранный преподаватель
+
+    # Поля для добавления нового студента
     new_student_first_name: str = ""
     new_student_last_name: str = ""
     new_student_phone: str = ""
@@ -24,13 +28,16 @@ class GroupState(rx.State):
 
     @property
     def group_id(self) -> str:
+        """Получить ID группы из параметров страницы."""
         return self.router.page.params.get("group_id", "")
 
     def load_groups(self):
+        """Загрузить все группы из базы данных."""
         with Session(engine) as session:
             self.groups = session.exec(select(Group)).all()
 
     def load_group(self):
+        """Загрузить текущую группу и её студентов."""
         group_id = self.group_id
         if group_id and group_id.isdigit():
             with Session(engine) as session:
@@ -39,7 +46,28 @@ class GroupState(rx.State):
                     self.current_group = group
                     self.students = list(group.students)
 
+    def load_teachers(self):
+        """Загрузить всех преподавателей из базы данных и отсортировать по ФИО."""
+        with Session(engine) as session:
+            # Используем ILIKE для регистронезависимого поиска
+            teachers = session.exec(
+                select(Personal)
+            ).all()
+            
+            # Отладочный вывод
+            print(f"Найдено преподавателей: {len(teachers)}")
+            for teacher in teachers:
+                print(f"Преподаватель: {teacher.full_name}, Роль: {teacher.role}")
+
+            # Сортируем преподавателей по ФИО
+            self.teachers = sorted([teacher.full_name for teacher in teachers])
+            print(f"Список преподавателей: {self.teachers}")
+
     def add_group(self):
+        """Добавить новую группу."""
+        if not self.new_group_name or not self.new_group_school or not self.new_group_course or not self.new_teacher:
+            return rx.toast.warning("Заполните все обязательные поля")
+
         with Session(engine) as session:
             group = Group(
                 name=self.new_group_name,
@@ -52,28 +80,29 @@ class GroupState(rx.State):
             session.commit()
             session.refresh(group)
             self.load_groups()
-            # Reset form fields
+            # Сбросить поля формы
             self.new_group_name = ""
             self.new_group_school = ""
             self.new_group_course = ""
             self.new_group_description = ""
             self.new_teacher = ""
-            
+            return rx.toast.success("Группа успешно добавлена")
+
     def delete_student(self, student_id: int):
-        """Delete studer by ID."""
+        """Удалить студента по ID."""
         with Session(engine) as session:
             student = session.get(Student, student_id)
             if student:
                 session.delete(student)
                 session.commit()
-                self.load_group()  #* reload the group list after delete
-                return rx.toast("Студент успешно удален")
+                self.load_group()
+                return rx.toast.success("Студент успешно удален")
             else:
-                return rx.toast("Студент не найден")
-            
+                return rx.toast.error("Студент не найден")
+
     def add_student(self):
-        """Adding a student to the group"""
-        #* check to empty input's
+        """Добавить студента в группу."""
+        #* check inputs for empty string
         if (
             not self.new_student_first_name
             or not self.new_student_last_name
@@ -86,13 +115,13 @@ class GroupState(rx.State):
         if not self.current_group:
             return rx.toast.error("Группа не выбрана")
 
-        #* protect for class number if input take str value
+        # check int for class number
         try:
             class_number = int(self.new_student_class_number)
         except ValueError:
             return rx.toast.error("Класс должен быть числом")
 
-        #* adding student to the group
+        # Добавление студента в группу
         with Session(engine) as session:
             student = Student(
                 first_name=self.new_student_first_name,
@@ -106,8 +135,8 @@ class GroupState(rx.State):
             try:
                 session.commit()
                 session.refresh(student)
-                self.load_group()  #* reload the group list after delete
-                # Reset values from input's
+                self.load_group()  #* reload students
+                #* reset inputs
                 self.new_student_first_name = ""
                 self.new_student_last_name = ""
                 self.new_student_phone = ""
@@ -116,16 +145,16 @@ class GroupState(rx.State):
                 return rx.toast.success("Студент успешно добавлен")
             except Exception as e:
                 return rx.toast.error(f"Ошибка при добавлении студента: {str(e)}")
-
+            
 def add_group_dialog() -> rx.Component:
     return rx.dialog.root(
         rx.dialog.trigger(
-            rx.button("Создать группу"),
+            rx.button("Создать группу", on_click=GroupState.load_teachers),
         ),
         rx.dialog.content(
             rx.dialog.title("Добавить новую группу"),
             rx.dialog.description("Заполните информацию о группе"),
-            rx.form(
+            rx.form.root(
                 rx.flex(
                     rx.input(
                         placeholder="Название группы",
@@ -138,28 +167,31 @@ def add_group_dialog() -> rx.Component:
                         value=GroupState.new_group_school,
                         on_change=GroupState.set_new_group_school,
                         required=True,
-                        
                     ),
                     rx.input(
                         placeholder="Курс",
                         value=GroupState.new_group_course,
                         on_change=GroupState.set_new_group_course,
                         required=True,
-                        
                     ),
-                    rx.input(
-                        placeholder="Преподаватель",
+                    rx.select.root(
+                        rx.select.trigger(placeholder="Преподаватель"),
+                        rx.select.content(
+                            rx.select.group(
+                                rx.foreach(
+                                    GroupState.teachers,
+                                    lambda teacher: rx.select.item(teacher, value=teacher)
+                                )
+                            ),
+                        ),
                         value=GroupState.new_teacher,
                         on_change=GroupState.set_new_teacher,
                         required=True,
-                        
                     ),
                     rx.input(
                         placeholder="Описание",
                         value=GroupState.new_group_description,
                         on_change=GroupState.set_new_group_description,
-                        required=True,
-                        
                     ),
                     rx.flex(
                         rx.dialog.close(
