@@ -27,16 +27,16 @@ class GroupState(rx.State):
     new_student_class_number: str = ""
 
     @property
-    def group_id(self) -> str:
+    async def group_id(self) -> str:
         """Получить ID группы из параметров страницы."""
         return self.router.page.params.get("group_id", "")
 
-    def load_groups(self):
+    async def load_groups(self):
         """Загрузить все группы из базы данных."""
         with Session(engine) as session:
             self.groups = session.exec(select(Group)).all()
 
-    def load_group(self):
+    async def load_group(self):
         """Загрузить текущую группу и её студентов."""
         group_id = self.group_id
         if group_id and group_id.isdigit():
@@ -46,24 +46,23 @@ class GroupState(rx.State):
                     self.current_group = group
                     self.students = list(group.students)
 
-    def load_teachers(self):
+    async def load_teachers(self):
         """Загрузить всех преподавателей из базы данных и отсортировать по ФИО."""
         with Session(engine) as session:
-            # Используем ILIKE для регистронезависимого поиска
             teachers = session.exec(
                 select(Personal)
             ).all()
             
-            # Отладочный вывод
             print(f"Найдено преподавателей: {len(teachers)}")
             for teacher in teachers:
                 print(f"Преподаватель: {teacher.full_name}, Роль: {teacher.role}")
 
-            # Сортируем преподавателей по ФИО
+            #* sort personal
             self.teachers = sorted([teacher.full_name for teacher in teachers])
-            print(f"Список преподавателей: {self.teachers}")
+            #! TEST
+            # print(f"Список преподавателей: {self.teachers}")
 
-    def add_group(self):
+    async def add_group(self):
         """Добавить новую группу."""
         if not self.new_group_name or not self.new_group_school or not self.new_group_course or not self.new_teacher:
             return rx.toast.warning("Заполните все обязательные поля")
@@ -88,7 +87,7 @@ class GroupState(rx.State):
             self.new_teacher = ""
             return rx.toast.success("Группа успешно добавлена")
 
-    def delete_student(self, student_id: int):
+    async def delete_student(self, student_id: int):
         """Удалить студента по ID."""
         with Session(engine) as session:
             student = session.get(Student, student_id)
@@ -100,7 +99,7 @@ class GroupState(rx.State):
             else:
                 return rx.toast.error("Студент не найден")
 
-    def add_student(self):
+    async def add_student(self):
         """Добавить студента в группу."""
         #* check inputs for empty string
         if (
@@ -174,6 +173,7 @@ def add_group_dialog() -> rx.Component:
                         on_change=GroupState.set_new_group_course,
                         required=True,
                     ),
+                    #! In production change to rx.select
                     rx.select.root(
                         rx.select.trigger(placeholder="Преподаватель"),
                         rx.select.content(
