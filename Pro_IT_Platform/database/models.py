@@ -1,6 +1,6 @@
 
 from typing import List, Optional
-from sqlmodel import Relationship, SQLModel, Field, create_engine
+from sqlmodel import Relationship, SQLModel, Field, create_engine, Session
 
 class Personal(SQLModel, table=True):
     __tablename__ = "personal"
@@ -34,9 +34,11 @@ class Student(SQLModel, table=True):
     first_name: str = Field(index=True)
     last_name: str = Field(index=True)
     phone: str = Field(unique=True, index=True)
+    login: str = Field()
+    password: str = Field()
     school: str = Field(index=True)
-    class_number: Optional[int] = Field(default=None, index=True)  # Сделали поле опциональным
-
+    class_number: Optional[int] = Field(default=None)
+    course: str = Field()  #* course
     group_id: Optional[int] = Field(default=None, foreign_key="groups.id")
     group: Optional[Group] = Relationship(back_populates="students")
 
@@ -48,6 +50,23 @@ engine = create_engine(DATABASE_URL)
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
+def add_admin_user():
+    # Создаем объект Personal с логином admin
+    admin_user = Personal(
+        login="admin",
+        full_name="Admin User",
+        role="administrator",
+        phone="1234567890"
+    )
+
+    # Открываем сессию и добавляем пользователя
+    with Session(engine) as session:
+        session.add(admin_user)
+        session.commit()  # Сохраняем изменения в базе данных
+        print("Пользователь admin успешно добавлен!")
+
+
 if __name__ == "__main__":
     create_db_and_tables()
+    add_admin_user()
     print("База данных и таблицы успешно созданы!")

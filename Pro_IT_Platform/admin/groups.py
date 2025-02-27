@@ -7,37 +7,41 @@ from ..ui.admin_pannel import admin_pannel
 
 class GroupState(rx.State):
     """State management for groups."""
+    new_group_course: str = "" 
+    courses: List[str] = ["Scratch", "Roblox", "Python", "Robotics", "GDevelop"]
     groups: List[Group] = []
     current_group: Optional[Group] = None
     students: List[Student] = []
-    teachers: List[str] = []  # Список преподавателей для выпадающего списка
+    teachers: List[str] = []  #? list of personal (teachers)
 
-    # Поля для создания новой группы
+    #* inputs for create group(s)
     new_group_name: str = ""
     new_group_school: str = ""
     new_group_course: str = ""
     new_group_description: str = ""
-    new_teacher: str = ""  # Выбранный преподаватель
+    new_teacher: str = ""  #* selected teacher
 
-    # Поля для добавления нового студента
+    #* inputs for create student(s)
     new_student_first_name: str = ""
     new_student_last_name: str = ""
+    new_student_login: str = ""
+    new_student_password: str = ""
     new_student_phone: str = ""
     new_student_school: str = ""
     new_student_class_number: str = ""
 
     @property
-    async def group_id(self) -> str:
-        """Получить ID группы из параметров страницы."""
+    def group_id(self) -> str:
+        """Get the group ID from the page parameters."""
         return self.router.page.params.get("group_id", "")
 
-    async def load_groups(self):
-        """Загрузить все группы из базы данных."""
+    def load_groups(self):
+        """Load all groups from the database."""
         with Session(engine) as session:
             self.groups = session.exec(select(Group)).all()
 
-    async def load_group(self):
-        """Загрузить текущую группу и её студентов."""
+    def load_group(self):
+        """Load the current group and its students."""
         group_id = self.group_id
         if group_id and group_id.isdigit():
             with Session(engine) as session:
@@ -46,26 +50,27 @@ class GroupState(rx.State):
                     self.current_group = group
                     self.students = list(group.students)
 
-    async def load_teachers(self):
-        """Загрузить всех преподавателей из базы данных и отсортировать по ФИО."""
+    def load_teachers(self):
+        """Load all teachers from the database and sort by full name."""
         with Session(engine) as session:
             teachers = session.exec(
                 select(Personal)
             ).all()
-            
-            print(f"Найдено преподавателей: {len(teachers)}")
-            for teacher in teachers:
-                print(f"Преподаватель: {teacher.full_name}, Роль: {teacher.role}")
+            #! TEST
+            # print(f"Найдено преподавателей: {len(teachers)}")
+            # for teacher in teachers:
+                # print(f"Преподаватель: {teacher.full_name}, Роль: {teacher.role}")
 
             #* sort personal
             self.teachers = sorted([teacher.full_name for teacher in teachers])
             #! TEST
             # print(f"Список преподавателей: {self.teachers}")
 
-    async def add_group(self):
-        """Добавить новую группу."""
+    def add_group(self):
+        """Add a new group."""
         if not self.new_group_name or not self.new_group_school or not self.new_group_course or not self.new_teacher:
             return rx.toast.warning("Заполните все обязательные поля")
+
 
         with Session(engine) as session:
             group = Group(
@@ -87,8 +92,8 @@ class GroupState(rx.State):
             self.new_teacher = ""
             return rx.toast.success("Группа успешно добавлена")
 
-    async def delete_student(self, student_id: int):
-        """Удалить студента по ID."""
+    def delete_student(self, student_id: int):
+        """Delete a student by ID."""
         with Session(engine) as session:
             student = session.get(Student, student_id)
             if student:
@@ -99,29 +104,38 @@ class GroupState(rx.State):
             else:
                 return rx.toast.error("Студент не найден")
 
-    async def add_student(self):
-        """Добавить студента в группу."""
-        #* check inputs for empty string
+    def add_student(self):
+        """Add a student to the group."""
+        #? Check for empty fields
         if (
             not self.new_student_first_name
             or not self.new_student_last_name
             or not self.new_student_phone
             or not self.new_student_school
             or not self.new_student_class_number
+            or not self.new_student_login
+            or not self.new_student_password
         ):
             return rx.toast.warning("Заполните все поля")
 
         if not self.current_group:
             return rx.toast.error("Группа не выбрана")
 
-        # check int for class number
+        #? Check if class number is an integer
         try:
             class_number = int(self.new_student_class_number)
         except ValueError:
             return rx.toast.error("Класс должен быть числом")
 
-        # Добавление студента в группу
+        #* Check for uniqueness of phone number
         with Session(engine) as session:
+            existing_student = session.exec(
+                select(Student).filter(Student.phone == self.new_student_phone)
+            ).first()
+            if existing_student:
+                return rx.toast.error("Студент с таким номером телефона уже существует.")
+
+            #* Add student to the group
             student = Student(
                 first_name=self.new_student_first_name,
                 last_name=self.new_student_last_name,
@@ -129,21 +143,30 @@ class GroupState(rx.State):
                 school=self.new_student_school,
                 class_number=class_number,
                 group_id=int(self.group_id),
+                course=self.current_group.course,
+                login=self.new_student_login,
+                password=self.new_student_password,
             )
             session.add(student)
             try:
                 session.commit()
                 session.refresh(student)
-                self.load_group()  #* reload students
-                #* reset inputs
+                self.load_group()  #* reload list of students
+                #* reset all inputs in dialog
                 self.new_student_first_name = ""
                 self.new_student_last_name = ""
                 self.new_student_phone = ""
                 self.new_student_school = ""
                 self.new_student_class_number = ""
+                self.new_student_login = ""
+                self.new_student_password = ""
                 return rx.toast.success("Студент успешно добавлен")
             except Exception as e:
                 return rx.toast.error(f"Ошибка при добавлении студента: {str(e)}")
+
+            
+    def set_new_group_course(self, value: str):
+        self.new_group_course = value
             
 def add_group_dialog() -> rx.Component:
     return rx.dialog.root(
@@ -167,8 +190,16 @@ def add_group_dialog() -> rx.Component:
                         on_change=GroupState.set_new_group_school,
                         required=True,
                     ),
-                    rx.input(
-                        placeholder="Курс",
+                    rx.select.root(
+                        rx.select.trigger(placeholder="Курс"),
+                        rx.select.content(
+                            rx.select.group(
+                                rx.foreach(
+                                    GroupState.courses,
+                                    lambda course: rx.select.item(course, value=course)
+                                )
+                            ),
+                        ),
                         value=GroupState.new_group_course,
                         on_change=GroupState.set_new_group_course,
                         required=True,
@@ -269,20 +300,33 @@ def add_student_form() -> rx.Component:
             ),
             rx.vstack(
                 rx.hstack(
+                    rx.input(
+                        placeholder="Имя",
+                        value=GroupState.new_student_first_name,
+                        on_change=GroupState.set_new_student_first_name,
+                        style=admin_input_style
+                    ),
+                    rx.input(
+                        placeholder="Фамилия",
+                        value=GroupState.new_student_last_name,
+                        on_change=GroupState.set_new_student_last_name,
+                        style=admin_input_style,
+                    ),
+            ),
+            rx.hstack(
                 rx.input(
-                    placeholder="Имя",
-                    value=GroupState.new_student_first_name,
-                    on_change=GroupState.set_new_student_first_name,
+                    placeholder="Логин",
+                    value=GroupState.new_student_login,
+                    on_change=GroupState.set_new_student_login,
                     style=admin_input_style
                 ),
                 rx.input(
-                    placeholder="Фамилия",
-                    value=GroupState.new_student_last_name,
-                    on_change=GroupState.set_new_student_last_name,
+                    placeholder="Пароль",
+                    value=GroupState.new_student_password,
+                    on_change=GroupState.set_new_student_password,
                     style=admin_input_style,
                 ),
-                ),
-            
+            ),
             rx.input(
                 placeholder="Телефон",
                 value=GroupState.new_student_phone,
