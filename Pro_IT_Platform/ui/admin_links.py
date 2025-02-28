@@ -10,8 +10,9 @@ nav_items = [
     {"icon": "grid-2x2", "text": "Главная", "href": "/admin"},
     {"icon": "users", "text": "Ученики", "href": "/admin/students"},
     {"icon": "boxes", "text": "Группы", "href": "/admin/groups"},
-    {"icon": "presentation", "text": "Курсы", "href": "/admin/courses"},
+    {"icon": "presentation", "text": "Курсы", "href": "/admin/courses_links"},
     {"icon": "person-standing", "text": "Персонал", "href": "/admin/personal"},
+    {"icon": "book-marked", "text": "Задания", "href": "/admin/courses"},
     {"icon": "archive-restore", "text": "Рассылки", "href": "/admin/mailing"}, #! make
 ]
 

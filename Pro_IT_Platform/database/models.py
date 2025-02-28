@@ -22,8 +22,8 @@ class Group(SQLModel, table=True):
     # Связь с моделью Student (один ко многим)
     students: List["Student"] = Relationship(back_populates="group")
 
-class Courses(SQLModel, table=True):
-    __tablename__ = "courses"
+class LinksCourses(SQLModel, table=True):
+    __tablename__ = "course"
     id: int = Field(primary_key=True)
     name: str = Field(index=True)
     link: str = Field()
@@ -42,6 +42,28 @@ class Student(SQLModel, table=True):
     group_id: Optional[int] = Field(default=None, foreign_key="groups.id")
     group: Optional[Group] = Relationship(back_populates="students")
 
+class Module(SQLModel, table=True):
+    __tablename__ = "modules"
+    id: int = Field(primary_key=True)
+    name: str = Field(index=True)  # Название модуля
+    course_id: int = Field(foreign_key="courses.id")  # Связь с курсом
+    course: Optional["Courses"] = Relationship(back_populates="modules")
+    tasks: List["Task"] = Relationship(back_populates="module")  # Связь с заданиями
+
+class Task(SQLModel, table=True):
+    __tablename__ = "tasks"
+    id: int = Field(primary_key=True)
+    text: str = Field()  # Текст задания
+    module_id: int = Field(foreign_key="modules.id")  # Связь с модулем
+    module: Optional["Module"] = Relationship(back_populates="tasks")
+
+# Обновим модель Courses, чтобы она включала модули
+class Courses(SQLModel, table=True):
+    __tablename__ = "courses"
+    id: int = Field(primary_key=True)
+    name: str = Field(index=True)
+    link: str = Field()
+    modules: List["Module"] = Relationship(back_populates="course")  # Связь с модулями
 
 DATABASE_URL = "sqlite:///pro-it.db"
 
