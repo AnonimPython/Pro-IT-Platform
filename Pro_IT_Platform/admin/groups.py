@@ -5,7 +5,7 @@ from ..database.models import Group, Student, Personal, Courses, engine
 from ..ui.colors import *
 from ..ui.admin_pannel import admin_pannel
 
-# Состояние для управления группами
+
 class GroupState(rx.State):
     """State management for groups."""
     courses: List[str] = []  #? List of courses (dynamic)

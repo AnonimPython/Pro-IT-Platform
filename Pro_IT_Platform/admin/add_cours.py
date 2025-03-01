@@ -3,6 +3,8 @@ import reflex as rx
 from sqlmodel import Session, select
 from ..database.models import Courses, Module, Task, engine
 from ..ui.colors import *
+from ..ui.admin_pannel import admin_pannel
+from ..ui.cours_card import cours_card
 
 # Состояние для управления курсами, модулями и заданиями
 class CourseState(rx.State):
@@ -13,6 +15,7 @@ class CourseState(rx.State):
     tasks: List[Task] = []  # Задания текущего модуля
     new_task_text: str = ""  # Текст нового задания
     current_course_id: Optional[int] = None  # ID текущего курса
+    current_module_id: Optional[int] = None  # ID текущего модуля
     new_course_name: str = ""  # Название нового курса
 
     async def load_courses(self):
@@ -33,6 +36,7 @@ class CourseState(rx.State):
 
     async def load_tasks(self, module_id: int):
         """Загрузить задания для выбранного модуля."""
+        self.current_module_id = module_id  # Устанавливаем текущий модуль
         with Session(engine) as session:
             self.tasks = session.exec(
                 select(Task).where(Task.module_id == module_id)
@@ -51,8 +55,8 @@ class CourseState(rx.State):
             session.add(task)
             session.commit()
             session.refresh(task)
-            self.new_task_text = ""  # Сбросить поле ввода
-            await self.load_tasks(module_id)  # Перезагрузить задания
+            self.new_task_text = ""  # Очищаем поле ввода
+            await self.load_tasks(module_id)  # Перезагружаем задачи для текущего модуля
             return rx.toast.success("Задание успешно добавлено")
 
     async def add_course(self):
@@ -79,8 +83,8 @@ class CourseState(rx.State):
                 session.add(module)
             session.commit()
 
-            self.new_course_name = ""  # Сбросить поле ввода
-            await self.load_courses()  # Перезагрузить список курсов
+            self.new_course_name = ""  # Сбрасываем поле ввода
+            await self.load_courses()  # Перезагружаем список курсов
             return rx.toast.success("Курс и модули успешно добавлены")
 
     async def set_course_id_from_route(self):
@@ -93,7 +97,11 @@ def add_course_dialog() -> rx.Component:
     """Диалоговое окно для добавления нового курса."""
     return rx.dialog.root(
         rx.dialog.trigger(
-            rx.button("Добавить курс", variant="soft", color_scheme="green"),
+            rx.button(
+                "Добавить курс",
+                # background_color=LINK_BACKGROUND_COLOR,
+                # border=f"1px solid {ADMIN_YELLOW}",
+            )
         ),
         rx.dialog.content(
             rx.dialog.title("Добавить новый курс"),
@@ -111,7 +119,7 @@ def add_course_dialog() -> rx.Component:
                 rx.dialog.close(
                     rx.button(
                         "Сохранить",
-                        on_click=CourseState.add_course,
+                        on_click=CourseState.add_course,  # Используем метод add_course
                     ),
                 ),
                 spacing="3",
@@ -120,37 +128,81 @@ def add_course_dialog() -> rx.Component:
         ),
     )
 
-# Список всех курсов
+#* list of all courses
 def courses_list() -> rx.Component:
     """Список всех курсов."""
     return rx.box(
-        rx.vstack(
-            rx.hstack(
-                rx.text("Все курсы", font_size="24px", weight="bold"),
-                add_course_dialog(),  # Кнопка для добавления курса
-                spacing="4",
-                align="center",
-            ),
-            rx.divider(),
-            rx.foreach(
-                CourseState.courses,
-                lambda course: rx.link(
-                    rx.box(
-                        rx.text(course.name, font_size="20px"),
-                        padding="10px",
-                        border_radius="5px",
-                        background_color=ADMIN_MAIN_CONTENT,
-                        _hover={"background_color": ADMIN_YELLOW},
+        rx.hstack(
+            admin_pannel(),
+            rx.vstack(
+                rx.box(
+                    rx.hstack(
+                        rx.text("Все курсы", font_size="20px"),
+                        rx.input(placeholder="Поиск", width="300px", style=input_style),
+                        justify="between",
+                        width="100%",
+                        align="center",
+                        align_self="center",
                     ),
-                    href=f"/courses/{course.id}",
+                    width="100%",
                 ),
+                rx.box(
+                    rx.vstack(
+                        rx.hstack(
+                            add_course_dialog(),
+                            spacing="4",
+                            align="center",
+                        ),
+                        rx.grid(
+                            rx.foreach(
+                                CourseState.courses,
+                                lambda course: rx.link(
+                                    rx.box(
+                                        cours_card(course.name),
+                                    ),
+                                    href=f"/admin/courses/{course.id}",
+                                ),
+                            ),
+                            gap="1rem",
+                            columns="3",
+                            margin_top="50px",
+                            grid_template_columns=[
+                                "1fr",
+                                "repeat(2, 1fr)",
+                                "repeat(2, 1fr)", 
+                                "repeat(3, 1fr)",
+                                "repeat(3, 1fr)",
+                            ],
+                            width="100%",
+                        ),
+                        spacing="4",
+                        padding="20px",
+                    ),
+                    on_mount=CourseState.load_courses,
+                ),
+                padding="10px",
+                border_radius="5px",
+                background_color="#1c1e21",
+                width="100%",
+                height="100%",
             ),
-            spacing="4",
+            
+            width="90%",
+            height="90vh",
+            border_radius="20px",
+            color="white",
             padding="20px",
+            background_color=ADMIN_MAIN_CONTENT,
+            margin="0 auto",
         ),
-        on_mount=CourseState.load_courses,
+        width="100%",
+        height="100vh",
+        color="white",
+        padding="20px",
+        background_color=ADMIN_BACKGROUND_COLOR,
+        margin="0 auto",
     )
-
+    
 # Страница курса с модулями и заданиями
 def course_page() -> rx.Component:
     """Страница курса с модулями и заданиями."""
@@ -196,9 +248,12 @@ def course_page() -> rx.Component:
                                 ),
                                 spacing="4",
                             ),
-                            rx.foreach(
-                                CourseState.tasks,
-                                lambda task: rx.text(f"Задание {task.id}: {task.text}", font_size="16px"),
+                            rx.cond(
+                                CourseState.current_module_id == module.id,
+                                rx.foreach(
+                                    CourseState.tasks,
+                                    lambda task: rx.text(f"Задание {task.id}: {task.text}", font_size="16px"),
+                                ),
                             ),
                             spacing="2",
                             padding="10px",
