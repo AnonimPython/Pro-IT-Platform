@@ -86,6 +86,18 @@ class CourseState(rx.State):
             self.new_course_name = ""  # Сбрасываем поле ввода
             await self.load_courses()  # Перезагружаем список курсов
             return rx.toast.success("Курс и модули успешно добавлены")
+        
+    async def delete_task(self, task_id: int):
+        """Удалить задание по ID."""
+        with Session(engine) as session:
+            task = session.get(Task, task_id)
+            if task:
+                session.delete(task)
+                session.commit()
+                await self.load_tasks(self.current_module_id)  # Перезагружаем задачи текущего модуля
+                return rx.toast.success("Задание успешно удалено")
+            else:
+                return rx.toast.error("Задание не найдено")
 
     async def set_course_id_from_route(self):
         """Извлечь course_id из URL и загрузить курс."""
@@ -208,12 +220,11 @@ def course_page() -> rx.Component:
     """Страница курса с модулями и заданиями."""
     return rx.box(
         rx.hstack(
-            admin_pannel(),  # Админ-панель
+            admin_pannel(),
             rx.vstack(
-                # Основной контент | Поиск
                 rx.box(
                     rx.hstack(
-                        rx.text("Курс", font_size="20px"),
+                        rx.text(f"Курс: {CourseState.current_course.name}", font_size="20px"),
                         rx.input(placeholder="Поиск", width="300px", style=input_style),
                         justify="between",
                         width="100%",
@@ -222,14 +233,11 @@ def course_page() -> rx.Component:
                     ),
                     width="100%",
                 ),
-                # Контент курса
                 rx.box(
                     rx.vstack(
                         rx.cond(
                             CourseState.current_course,
                             rx.vstack(
-                                rx.text(f"Курс: {CourseState.current_course.name}", font_size="24px", weight="bold"),
-                                rx.divider(),
                                 rx.foreach(
                                     CourseState.modules,
                                     lambda module: rx.vstack(
@@ -265,12 +273,28 @@ def course_page() -> rx.Component:
                                             ),
                                             spacing="4",
                                         ),
-                                        rx.cond(
-                                            CourseState.current_module_id == module.id,
-                                            rx.foreach(
-                                                CourseState.tasks,
-                                                lambda task: rx.text(f"Задание {task.id}: {task.text}", font_size="16px"),
+                                        rx.box(
+                                            rx.cond(
+                                                CourseState.current_module_id == module.id,
+                                                rx.foreach(
+                                                    CourseState.tasks,
+                                                    lambda task, idx: rx.hstack(  # Добавляем индекс idx
+                                                        rx.text(f"Задание {idx + 1}: {task.text}", font_size="16px"),  # Используем idx + 1
+                                                        rx.spacer(),
+                                                        rx.button(
+                                                            "Удалить",
+                                                            on_click=lambda task_id=task.id: CourseState.delete_task(task_id),
+                                                            size="1",
+                                                            background="red",
+                                                            color="white",
+                                                        ),
+                                                        spacing="2",
+                                                        padding="5px",
+                                                    ),
+                                                ),
                                             ),
+                                            width="100%",
+                                            justify="between",
                                         ),
                                         spacing="2",
                                         padding="10px",
@@ -309,5 +333,3 @@ def course_page() -> rx.Component:
         margin="0 auto",
         on_mount=CourseState.set_course_id_from_route,
     )
-    
-    
