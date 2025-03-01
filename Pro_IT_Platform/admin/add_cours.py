@@ -207,65 +207,107 @@ def courses_list() -> rx.Component:
 def course_page() -> rx.Component:
     """Страница курса с модулями и заданиями."""
     return rx.box(
-        rx.vstack(
-            rx.cond(
-                CourseState.current_course,
-                rx.vstack(
-                    rx.text(f"Курс: {CourseState.current_course.name}", font_size="24px", weight="bold"),
-                    rx.divider(),
-                    rx.foreach(
-                        CourseState.modules,
-                        lambda module: rx.vstack(
-                            rx.hstack(
-                                rx.text(f"Модуль {module.id}: {module.name}", font_size="20px"),
-                                rx.spacer(),
-                                rx.dialog.root(
-                                    rx.dialog.trigger(
-                                        rx.button("Добавить задание", size="1"),
-                                    ),
-                                    rx.dialog.content(
-                                        rx.dialog.title(f"Добавить задание в {module.name}"),
-                                        rx.dialog.description("Введите текст задания"),
-                                        rx.input(
-                                            placeholder="Текст задания",
-                                            value=CourseState.new_task_text,
-                                            on_change=CourseState.set_new_task_text,
-                                        ),
-                                        rx.flex(
-                                            rx.dialog.close(
-                                                rx.button("Отмена", variant="soft", color_scheme="gray"),
-                                            ),
-                                            rx.dialog.close(
-                                                rx.button(
-                                                    "Сохранить",
-                                                    on_click=lambda: CourseState.add_task(module.id),
+        rx.hstack(
+            admin_pannel(),  # Админ-панель
+            rx.vstack(
+                # Основной контент | Поиск
+                rx.box(
+                    rx.hstack(
+                        rx.text("Курс", font_size="20px"),
+                        rx.input(placeholder="Поиск", width="300px", style=input_style),
+                        justify="between",
+                        width="100%",
+                        align="center",
+                        align_self="center",
+                    ),
+                    width="100%",
+                ),
+                # Контент курса
+                rx.box(
+                    rx.vstack(
+                        rx.cond(
+                            CourseState.current_course,
+                            rx.vstack(
+                                rx.text(f"Курс: {CourseState.current_course.name}", font_size="24px", weight="bold"),
+                                rx.divider(),
+                                rx.foreach(
+                                    CourseState.modules,
+                                    lambda module: rx.vstack(
+                                        rx.hstack(
+                                            rx.text(f"Модуль {module.id}: {module.name}", font_size="20px"),
+                                            rx.spacer(),
+                                            rx.dialog.root(
+                                                rx.dialog.trigger(
+                                                    rx.button("Добавить задание", size="1"),
+                                                ),
+                                                rx.dialog.content(
+                                                    rx.dialog.title(f"Добавить задание в {module.name}"),
+                                                    rx.dialog.description("Введите текст задания"),
+                                                    rx.input(
+                                                        placeholder="Текст задания",
+                                                        value=CourseState.new_task_text,
+                                                        on_change=CourseState.set_new_task_text,
+                                                    ),
+                                                    rx.flex(
+                                                        rx.dialog.close(
+                                                            rx.button("Отмена", variant="soft", color_scheme="gray"),
+                                                        ),
+                                                        rx.dialog.close(
+                                                            rx.button(
+                                                                "Сохранить",
+                                                                on_click=lambda: CourseState.add_task(module.id),
+                                                            ),
+                                                        ),
+                                                        spacing="3",
+                                                        justify="end",
+                                                    ),
                                                 ),
                                             ),
-                                            spacing="3",
-                                            justify="end",
+                                            spacing="4",
                                         ),
+                                        rx.cond(
+                                            CourseState.current_module_id == module.id,
+                                            rx.foreach(
+                                                CourseState.tasks,
+                                                lambda task: rx.text(f"Задание {task.id}: {task.text}", font_size="16px"),
+                                            ),
+                                        ),
+                                        spacing="2",
+                                        padding="10px",
+                                        border_radius="5px",
+                                        background_color=ADMIN_MAIN_CONTENT,
                                     ),
                                 ),
                                 spacing="4",
+                                padding="20px",
                             ),
-                            rx.cond(
-                                CourseState.current_module_id == module.id,
-                                rx.foreach(
-                                    CourseState.tasks,
-                                    lambda task: rx.text(f"Задание {task.id}: {task.text}", font_size="16px"),
-                                ),
-                            ),
-                            spacing="2",
-                            padding="10px",
-                            border_radius="5px",
-                            background_color=ADMIN_MAIN_CONTENT,
+                            rx.text("Курс не найден", font_size="20px"),
                         ),
                     ),
-                    spacing="4",
-                    padding="20px",
+                    width="100%",
+                    margin_top="50px",
                 ),
-                rx.text("Курс не найден", font_size="20px"),
+                padding="10px",
+                border_radius="5px",
+                background_color="#1c1e21",
+                width="100%",
+                height="100%",
             ),
+            width="90%",
+            height="90vh",
+            border_radius="20px",
+            color="white",
+            padding="20px",
+            background_color=ADMIN_MAIN_CONTENT,
+            margin="0 auto",
         ),
+        width="100%",
+        height="100vh",
+        color="white",
+        padding="20px",
+        background_color=ADMIN_BACKGROUND_COLOR,
+        margin="0 auto",
         on_mount=CourseState.set_course_id_from_route,
     )
+    
+    
