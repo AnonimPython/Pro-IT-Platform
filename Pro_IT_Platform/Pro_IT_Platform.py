@@ -17,6 +17,7 @@ from .ui.colors import *
 from .pages.main import main
 from .pages.login import login
 from .pages.task_detail import task_detail
+from .pages.error import error
 
 #* ADMIN PAGES
 from .admin.main import main as admin_main
@@ -49,6 +50,7 @@ app = rx.App(
 app.add_page(main,route="/",title="Main Page")
 app.add_page(login,route="/login",title="Login Page")
 app.add_page(task_detail, route="/task/[task]")
+app.add_page(error, route='/404')
 
 #* ADMIN PAGES
 app.add_page(admin_main,route="/admin",title="Админ панель")

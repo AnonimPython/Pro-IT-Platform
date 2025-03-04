@@ -45,7 +45,7 @@ class Student(SQLModel, table=True):
 class Module(SQLModel, table=True):
     __tablename__ = "modules"
     id: int = Field(primary_key=True)
-    name: str = Field(index=True)  # Название модуля
+    name: str = Field(index=True)
     course_id: int = Field(foreign_key="courses.id")  # Связь с курсом
     course: Optional["Courses"] = Relationship(back_populates="modules")
     tasks: List["Task"] = Relationship(back_populates="module")  # Связь с заданиями
@@ -53,11 +53,11 @@ class Module(SQLModel, table=True):
 class Task(SQLModel, table=True):
     __tablename__ = "tasks"
     id: int = Field(primary_key=True)
-    text: str = Field()  # Текст задания
+    text: str = Field()
     module_id: int = Field(foreign_key="modules.id")  # Связь с модулем
     module: Optional["Module"] = Relationship(back_populates="tasks")
 
-# Обновим модель Courses, чтобы она включала модули
+
 class Courses(SQLModel, table=True):
     __tablename__ = "courses"
     id: int = Field(primary_key=True)
