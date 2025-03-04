@@ -9,6 +9,9 @@ import reflex as rx
 
 from rxconfig import config
 
+from .admin.state import AuthState
+
+
 #* UI
 from .ui.colors import *
 
@@ -25,8 +28,9 @@ from .admin.courses import courses
 from .admin.students import students
 from .admin.groups import GroupState, groups, group_page
 from .admin.personal import personal
+from .admin.auth_page import auth_page
 from .admin.add_cours import courses_list, course_page
-
+from .admin.main import main as admin_main
 
 
 app = rx.App(
@@ -53,12 +57,14 @@ app.add_page(task_detail, route="/task/[task]")
 app.add_page(error, route='/404')
 
 #* ADMIN PAGES
-app.add_page(admin_main,route="/admin",title="Админ панель")
-app.add_page(courses,route="/admin/courses_links",title="Ссылки")
-app.add_page(students,route="/admin/students",title="Ученики")
-app.add_page(groups,route="/admin/groups",title="Группы")
-app.add_page(personal,route="/admin/personal",title="Персонал")
-app.add_page(courses_list, route="/admin/courses")
+app.add_page(admin_main,route="/admin",title="Админ панель",on_load=AuthState.check_auth)
+app.add_page(courses,route="/admin/courses_links",title="Ссылки",on_load=AuthState.check_auth)
+app.add_page(students,route="/admin/students",title="Ученики",on_load=AuthState.check_auth)
+app.add_page(groups,route="/admin/groups",title="Группы",on_load=AuthState.check_auth)
+app.add_page(personal,route="/admin/personal",title="Персонал",on_load=AuthState.check_auth)
+app.add_page(courses_list, route="/admin/courses",on_load=AuthState.check_auth)
+app.add_page(auth_page, route="/auth") #* this page with inputs form to auth to admin panel
+app.add_page(admin_main, route="/admin_main")#* this page need to check auth. If user is not logged in then redirect to /admin_main
 app.add_page(course_page, route="/admin/courses/[course_id]")
 app.add_page(
     group_page,

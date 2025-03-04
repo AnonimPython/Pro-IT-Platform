@@ -2,7 +2,8 @@ import reflex as rx
 from .state import AuthState
 from ..ui.colors import *
 
-def auth_form():
+def auth_page():
+    """Страница авторизации"""
     return rx.center(
         rx.vstack(
             rx.text("Введите код из Google Authenticator", size="6", weight="bold", text_align="center", color="white"),
