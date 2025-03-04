@@ -17,13 +17,13 @@ def get_weather():
         temp_C = round((temp_F - 32) / 1.8)
         return rx.hstack(
             rx.icon(tag="cloud"),
-            rx.text(f"{city}",), 
+            rx.text(f"{city}",font_weight="bold"), 
             rx.text(f"{temp_C} °C",),
             color="white",
             text_align="center",
             align="center",
             align_items="center",
-            margin_left="50%",
+            # margin_left="50%",
                                 
         )
         

@@ -6,7 +6,7 @@ def auth_page():
     """Страница авторизации"""
     return rx.center(
         rx.vstack(
-            rx.text("Введите код из Google Authenticator", 
+            rx.text("Вход в админ панель", 
                    size="6", 
                    weight="bold",
                    text_align="center",

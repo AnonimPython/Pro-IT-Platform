@@ -1,4 +1,6 @@
 import reflex as rx
+
+from ..admin.get_weather import get_weather
 from ..ui.colors import *
 from ..ui.admin_links import admin_links
 from ..admin.state import AuthState
@@ -21,6 +23,20 @@ def admin_pannel():
             transition="0.3s",
         ), 
         rx.separator(size="4", background=ADMIN_YELLOW, margin_top="20px"),
+        rx.box(
+            get_weather(),
+            width="100%",
+            background="linear-gradient(45deg, var(--tomato-9), var(--plum-9))",
+            border_radius="15px",
+            padding=["1em", "1.5em", "2em"],
+            style={
+                "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
+            },
+            _hover={
+                "transform": "scale(1.02)",
+                "transition": "all 1s ease-out;",
+            },
+        ),
         width="20%",
         padding="10px",
         margin_top="10px",

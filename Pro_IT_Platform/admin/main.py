@@ -14,5 +14,5 @@ def main():
         width="100%",
         height="100vh",
         background_color=ADMIN_BACKGROUND_COLOR,
-        padding_top="2%",
+        # padding_top="2%",
     )

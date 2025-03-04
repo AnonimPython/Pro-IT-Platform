@@ -65,7 +65,7 @@ app.add_page(personal,route="/admin/personal",title="Персонал",on_load=A
 app.add_page(courses_list, route="/admin/courses",on_load=AuthState.check_auth)
 app.add_page(auth_page, route="/auth") #* this page with inputs form to auth to admin panel
 app.add_page(admin_main, route="/admin_main")#* this page need to check auth. If user is not logged in then redirect to /admin_main
-app.add_page(course_page, route="/admin/courses/[course_id]")
+app.add_page(course_page, route="/admin/courses/[course_id]",on_load=AuthState.check_auth)
 app.add_page(
     group_page,
     route="/admin/groups/[group_id]",
