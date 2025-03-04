@@ -1,12 +1,17 @@
 import reflex as rx
-from .state import AuthState
+from .state import AuthState 
 from ..ui.colors import *
 
 def auth_page():
     """Страница авторизации"""
     return rx.center(
         rx.vstack(
-            rx.text("Введите код из Google Authenticator", size="6", weight="bold", text_align="center", color="white"),
+            rx.text("Введите код из Google Authenticator", 
+                   size="6", 
+                   weight="bold",
+                   text_align="center",
+                   color="white"
+            ),
             rx.cond(
                 ~AuthState.show_login_field,
                 rx.vstack(
@@ -24,6 +29,7 @@ def auth_page():
                         transition="0.3s",
                         _hover={"background": BORDER_INPUT}
                     ),
+                    align_items="center", # Добавлено
                 ),
                 rx.vstack(
                     rx.input(
@@ -40,10 +46,19 @@ def auth_page():
                         transition="0.3s",
                         _hover={"background": BORDER_INPUT}
                     ),
+                    align_items="center", # Добавлено
                 ),
             ),
             width="100%",
+            align_items="center", # Добавлено
+            justify_content="center", # Добавлено
         ),
         height="100vh",
         width="100%",
+        color="white",
+        padding="20px",
+        background_color=ADMIN_BACKGROUND_COLOR,
+        margin="0 auto",
+        align_items="center", # Добавлено
+        justify_content="center", # Добавлено
     )

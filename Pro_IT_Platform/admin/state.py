@@ -5,37 +5,39 @@ from dotenv import load_dotenv
 from sqlmodel import Session, select
 from ..database.models import Personal, engine
 
+# Load environment variables from .env file
 load_dotenv()
 
+# Get the secret key for Google Authenticator from environment variables
 SECRET_KEY = os.getenv("GOOGLE_SECRET_AUTHENTIFICATOR_KEY")
 
 def verify_code(user_code):
-    """Проверка кода Google Authenticator."""
+    """Verify the Google Authenticator code."""
     totp = pyotp.TOTP(SECRET_KEY)
     return totp.verify(user_code)
 
 class AuthState(rx.State):
-    code: str = rx.LocalStorage("")  # Храним код в LocalStorage
-    login: str = rx.LocalStorage("")  # Храним логин в LocalStorage
-    auth_token: str = rx.LocalStorage("")  # Токен авторизации
-    error: str = ""
-    show_login_field: bool = False
-    current_user_name: str = ""
-    current_user_role: str = ""
+    code: str = rx.LocalStorage("")  # Store the code in LocalStorage
+    login: str = rx.LocalStorage("")  # Store the login in LocalStorage
+    auth_token: str = rx.LocalStorage("")  # Store the authentication token in LocalStorage
+    error: str = ""  # Store error messages
+    show_login_field: bool = False  # Control the visibility of the login field
+    current_user_name: str = ""  # Store the current user's name
+    current_user_role: str = ""  # Store the current user's role
 
     def verify_code(self):
-        """Проверка кода Google Authenticator."""
+        """Verify the Google Authenticator code."""
         if verify_code(self.code):
-            self.show_login_field = True
-            self.error = ""
+            self.show_login_field = True  # Show the login field if the code is correct
+            self.error = ""  # Clear any previous errors
         else:
-            self.error = "Неверный код"
-            return rx.toast.error("Неверный код. Попробуйте снова.")
+            self.error = "Invalid code"  # Set an error message
+            return rx.toast.error("Invalid code. Please try again.")  # Show an error toast
 
     def verify_login(self):
-        """Проверка логина и установка токена."""
+        """Verify the login and set the authentication token."""
         if not self.login:
-            return rx.toast.error("Введите логин")
+            return rx.toast.error("Please enter your login")  # Show an error if the login is empty
 
         with Session(engine) as session:
             user = session.exec(
@@ -43,26 +45,27 @@ class AuthState(rx.State):
             ).first()
 
             if user:
-                self.auth_token = "authenticated"  # Устанавливаем токен
-                self.current_user_name = user.full_name
-                self.current_user_role = user.role
-                self.error = ""
-                return rx.redirect("/admin")  # Перенаправляем на админ-панель
+                self.auth_token = "authenticated"  # Set the authentication token
+                self.current_user_name = user.full_name  # Set the current user's name
+                self.current_user_role = user.role  # Set the current user's role
+                self.error = ""  # Clear any previous errors
+                return rx.redirect("/admin")  # Redirect to the admin panel
             else:
-                self.error = "Неверные учетные данные"
-                return rx.toast.error("Пользователь не найден")
+                self.error = "Invalid credentials"  # Set an error message
+                return rx.toast.error("User not found")  # Show an error toast
 
     def logout(self):
-        """Выход из системы с очисткой storage."""
-        self.auth_token = ""
-        self.code = ""
-        self.login = ""
-        self.current_user_name = ""
-        self.current_user_role = ""
-        self.error = ""
-        return rx.redirect("/auth")  # Перенаправляем на страницу авторизации
+        """Log out the user and clear the storage."""
+        self.auth_token = ""  # Clear the authentication token
+        self.code = ""  # Clear the code
+        self.login = ""  # Clear the login
+        self.current_user_name = ""  # Clear the current user's name
+        self.current_user_role = ""  # Clear the current user's role
+        self.error = ""  # Clear any errors
+        self.show_login_field = False  # Reset the visibility of the login field
+        return rx.redirect("/auth")  # Redirect to the authentication page
 
     def check_auth(self):
-        """Проверка авторизации при загрузке страницы."""
+        """Check authentication when the page loads."""
         if not self.auth_token:
-            return rx.redirect("/auth")  # Перенаправляем на страницу авторизации
+            return rx.redirect("/auth")  # Redirect to the authentication page if not authenticated

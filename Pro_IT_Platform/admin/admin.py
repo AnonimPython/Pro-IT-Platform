@@ -5,7 +5,6 @@ from ..admin.get_weather import get_weather
 from .state import AuthState
 
 def admin_panel():
-    """Компонент админ-панели"""
     return rx.box(
         rx.hstack(
             admin_pannel(),
