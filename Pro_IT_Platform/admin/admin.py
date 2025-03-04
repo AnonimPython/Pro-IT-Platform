@@ -2,6 +2,7 @@ import reflex as rx
 # from .state import AuthState
 from ..ui.colors import *
 from ..ui.admin_pannel import admin_pannel
+from ..admin.get_weather import get_weather
 
 # rx.button("Выйти", on_click=AuthState.logout), 
 def main_content():
@@ -9,6 +10,7 @@ def main_content():
         rx.hstack(
             admin_pannel(),
             rx.vstack(
+                rx.vstack(
                 #* main content | search
                 rx.box(
                     rx.hstack(
@@ -20,7 +22,6 @@ def main_content():
                         align="center", align_self="center"
                     ),
                     width="100%",
-                    
                 ),
                 padding="10px",
                 border_radius="5px",
@@ -28,6 +29,12 @@ def main_content():
                 width="100%",
                 height="100%",
             ),
+            #* weather
+                rx.box(
+                    get_weather(),    
+                ),
+            ),
+            
         ),
         width="90%",
         height="90vh",

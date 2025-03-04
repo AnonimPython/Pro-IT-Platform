@@ -2,18 +2,6 @@ import reflex as rx
 from .state import AuthState
 from ..ui.colors import *
 
-input_style: dict = {
-    "width": "300px",
-    "height": "50px",
-    "--text-field-focus-color": BORDER_INPUT,
-    "background": INPUT_BACKGROUND,
-    "color": "white",
-    "& input::placeholder": {
-        "padding-left":"10px",
-        "color": "white"
-    },
-    "font-size": "20px",
-    }
 def auth_form():
     return rx.center(
         rx.vstack(

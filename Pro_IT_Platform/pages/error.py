@@ -33,7 +33,7 @@ def error() -> rx.Component:
                         height="40px",
                         width="200px",
                     ),
-                    href="/",
+                    href="/admin",
                 ),
                 spacing="4",
                 align="center",
