@@ -1,5 +1,7 @@
 import reflex as rx
 from ..ui.colors import *
+from sqlmodel import Session, select
+from ..database.models import Student, engine
 
 class LoginInputState(rx.State):
     form_data: dict = {}
@@ -8,7 +10,29 @@ class LoginInputState(rx.State):
     def handle_submit(self, form_data: dict):
         self.form_data = form_data
         print("Form data:", self.form_data)
+        
+        try:
+            # Get form data
+            login = form_data.get("login", "")
+            password = form_data.get("password", "")
 
+            # Connect to the database using SQLModel Session
+            with Session(engine) as session:
+                # Execute SQL query to find user
+                statement = select(Student).where(Student.login == login, Student.password == password)
+                user = session.exec(statement).first()
+
+                if user:
+                    # Save user data in cookies
+                    # rx.set_cookie("student_id", str(user.id))  # Save student ID
+                    # rx.set_cookie("course", user.course)  # Save course
+                    return rx.redirect("/")  # Redirect to the main page if user is found
+                else:
+                    return rx.toast.error("Неверный логин или пароль!")  # Show error toast if user is not found
+
+        except Exception as e:
+            print(f"Login error: {str(e)}")
+            return rx.toast.error("Произошла ошибка при входе в систему")
 
 
 def login():
@@ -67,7 +91,17 @@ def login():
                             ),
                             on_submit=LoginInputState.handle_submit,
                             reset_on_submit=True,
+                            margin_bottom="20px",
                         ),                   
+                        rx.box(
+                            rx.link(
+                                rx.text("Войти как преподаватель"),
+                                href="/admin/",
+                                color=BUTTON_BACKGROUND,
+                                text_align="center",
+                            ),
+                            
+                        ),
                     ),
                 ),
                 padding="0px 100px 100px 0px",
