@@ -239,7 +239,7 @@ def course_page() -> rx.Component:
             padding="5px",
         )
 
-    def render_module(module, index):  # Added index parameter
+    def render_module(module, index):
         module_number = index + 1
         return rx.vstack(
             rx.hstack(
@@ -303,24 +303,29 @@ def course_page() -> rx.Component:
                     ),
                     width="100%",
                 ),
+                # Добавляем прокручиваемый контейнер
                 rx.box(
                     rx.vstack(
                         rx.cond(
                             CourseState.current_course,
-                            rx.vstack(
-                                # Here's where we replace the old foreach with the new one
-                                rx.foreach(
-                                    CourseState.modules,
-                                    lambda m, i: render_module(m, i)
+                            rx.box(
+                                rx.vstack(
+                                    rx.foreach(
+                                        CourseState.modules,
+                                        lambda m, i: render_module(m, i)
+                                    ),
+                                    spacing="4",
+                                    padding="20px",
                                 ),
-                                spacing="4",
-                                padding="20px",
+                                height="calc(80vh - 100px)",  # Фиксированная высота с учетом хедера
+                                overflow_y="auto",  # Включаем вертикальную прокрутку
+                                width="100%",
                             ),
                             rx.text("Курс не найден", font_size="20px"),
                         ),
                     ),
                     width="100%",
-                    margin_top="50px",
+                    margin_top="20px",
                 ),
                 padding="10px",
                 border_radius="5px",

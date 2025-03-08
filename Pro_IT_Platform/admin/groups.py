@@ -232,19 +232,36 @@ def student_list() -> rx.Component:
                     rx.foreach(
                         GroupState.students,
                         lambda student: rx.box(
-                            rx.button(
-                                "Х",
+                            rx.hstack(
+                                rx.button(
+                                rx.icon(tag="trash-2",color="red"),
+                                background="transparent",
                                 on_click=lambda student_id=student.id: GroupState.delete_student(student_id),
-                                background_color="red",
                                 color="white",
-                                border_radius="50%",
+                                border_radius="5px",
                                 size="1",
                                 _hover={"background_color": "darkred"},
                             ),
-                            rx.text(
-                                f"{student.first_name} {student.last_name} {student.phone}",
-                                font_size="25px",
+                            rx.box(
+                                rx.text(
+                                    f"{student.first_name} {student.last_name} {student.phone}",
+                                    font_size="25px",
+                                ),
+                                rx.text(
+                                    f"Логин: {student.login} Пароль:{student.password}",
+                                    font_size="25px",
+                                ),
                             ),
+                            
+                            align="center",
+                            align_self="center",
+                            ),
+                            
+                            width="100%",
+                            align="center",
+                            background=INPUT_BACKGROUND,
+                            align_self="center",
+                            border_radius="15px",
                         ),
                     ),
                     direction="column",
@@ -456,7 +473,16 @@ def group_page() -> rx.Component:
                     rx.hstack(
                         rx.vstack(
                             rx.text(f"Группа: {GroupState.current_group.name}", font_size="20px"),
-                            rx.text(f"Школа: {GroupState.current_group.school}"),
+                            rx.link(
+                                rx.text(f"Школа: {GroupState.current_group.school}"),
+                                href=f"https://yandex.ru/maps/?text={GroupState.current_group.school}",
+                                is_external=True,
+                                style={
+                                    # "color": "blue",  # Цвет ссылки
+                                    "text_decoration": "underline",  # Подчеркивание
+                                    "font_weight": "bold",  # Жирный шрифт
+                                },
+                            ),
                             rx.text(f"Преподаватель: {GroupState.current_group.teacher}"),
                             rx.text(f"Курс: {GroupState.current_group.course}"),
                             rx.text(f"Описание: {GroupState.current_group.description}"),

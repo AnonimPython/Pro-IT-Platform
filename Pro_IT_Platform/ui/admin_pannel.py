@@ -37,6 +37,20 @@ def admin_pannel():
                 "transition": "all 1s ease-out;",
             },
         ),
+        
+        rx.box(
+            rx.tooltip(
+                rx.hstack(
+                    rx.icon(tag="info",color="gray"),
+                    rx.text("Бета тест",font_size="15px",color="gray"),
+                    align="center",
+                    align_self="center",
+                ),
+                content="Данный проект находиться на BETA тестировании, поэтому некоторые функции могут быть недоступны.",
+            ),
+            
+            
+        ),
         width="20%",
         padding="10px",
         margin_top="10px",
