@@ -1,250 +1,186 @@
 import reflex as rx
+from sqlmodel import Session, select
+from ..database.models import Student, Courses, Module, Task, engine
 from ..ui.colors import *
+from typing import List, Dict, Optional
 
+class MainState(rx.State):
+    selected_module_id: int = 0
+    selected_task_id: int = 0
+    current_task: Dict[str, str] = {}
+    student_name: str = ""
+    course_name: str = ""
+    current_course_id: int = 0
+    
+    class ModuleType(rx.Base):
+        id: int
+        name: str
+        tasks: List[Dict[str, str]]
+    
+    modules: List[ModuleType] = []
 
-#! TEST DATA
-MODULES = [
-    {
-        "id": 1,
-        "name": "Структура",
-        "tasks": [
-            {"id": 1, "text": "Изучите структуру проекта."},
-            {"id": 2, "text": "Создайте новую ветку в Git."},
-            {"id": 3, "text": "Напишите документацию."},
-        ],
-    },
-    {
-        "id": 2,
-        "name": "База",
-        "tasks": [
-            {"id": 1, "text": "Настройте базу данных."},
-            {"id": 2, "text": "Создайте таблицы."},
-        ],
-    },
-    {
-        "id": 3,
-        "name": "Учеба",
-        "tasks": [
-            {"id": 1, "text": "Прочитайте главу 1 учебника."},
-            {"id": 2, "text": "Решите задачи из главы 1."},
-            {"id": 3, "text": "Подготовьтесь к тесту."},
-            {"id": 4, "text": "Напишите конспект."},
-        ],
-    },
-    {
-        "id": 4,
-        "name": "Перекус",
-        "tasks": [
-            {"id": 1, "text": "Приготовьте бутерброд."},
-        ],
-    },
-    {
-        "id": 5,
-        "name": "Выпивка",
-        "tasks": [
-            {"id": 1, "text": "Купите напитки."},
-            {"id": 2, "text": "Разлейте по бокалам."},
-        ],
-    },
-]
+    @rx.var
+    def has_modules(self) -> bool:
+        """Check if modules are loaded."""
+        return len(self.modules) > 0
 
-class State(rx.State):
-    # State variable to track the currently selected module
-    selected_module: int = 1
+    def reset_state(self):
+        """Reset state variables to default values."""
+        self.selected_module_id = 0
+        self.selected_task_id = 0
+        self.current_task = {}
+        self.student_name = ""
+        self.course_name = ""
+        self.current_course_id = 0
+        self.modules = []
 
-    # State variable to track the currently selected task
-    selected_task: str = ""
-    selected_description: str = ""
+    @rx.event
+    async def on_load(self):
+        """Load modules if we have a course_id but no modules loaded."""
+        if self.current_course_id and not self.has_modules:
+            with Session(engine) as session:
+                # Get modules for current course
+                modules = session.exec(
+                    select(Module).where(Module.course_id == self.current_course_id)
+                ).all()
+                
+                # Transform modules into required format
+                self.modules = [
+                    self.ModuleType(
+                        id=module.id,
+                        name=module.name,
+                        tasks=[
+                            {"id": str(t.id), "text": t.text}
+                            for t in session.exec(
+                                select(Task).where(Task.module_id == module.id)
+                            ).all()
+                        ]
+                    )
+                    for module in modules
+                ]
 
-    def select_module(self, module: int):
-        """Handler for selecting a module."""
-        self.selected_module = module
+    @rx.event
+    def select_module(self, module_id: int):
+        """Event handler for selecting a module."""
+        self.selected_module_id = module_id
+    
+    @rx.event
+    def select_task(self, task_id: str, task_text: str):
+        """Event handler for selecting a task."""
+        self.selected_task_id = int(task_id)
+        self.current_task = {"id": task_id, "text": task_text}
+        return rx.redirect(f"/task/{task_id}")
 
-    def select_task(self, task_number: str, task_description: str):
-        """Handler for selecting a task. Redirects to the task detail page."""
-        self.selected_task = task_number
-        self.selected_description = task_description
-        #* Redirect to the task detail page| take № of module and № of task
-        return rx.redirect(f"/task/{task_number}")
+    @rx.event
+    def logout(self):
+        """Event handler for logout."""
+        self.reset_state()
+        return rx.redirect("/login")
 
-
-def task_circles(tasks):
-    """Component to display task circles (buttons) for a given list of tasks."""
-    return rx.hstack(
-        *[
-            rx.box(
-                rx.button(
-                    rx.text(f"Задание {task['id']}"),  #* Display only the task name (e.g., "Задание 1")
-                    on_click=lambda task=task: State.select_task(str(task["id"]), task["text"]),  #* Pass task number and full text
-                    **TASK_CIRCLE_STYLE,  #circle style
-                    _hover={
-                        "background": INPUT_BACKGROUND,
-                        "color":"white", 
-                    },
-                    transition="0.2s linear",
-                ),
-            )
-            for task in tasks  #* Loop through each task in the list
-        ],
-        flex_wrap="wrap", 
-    )
-
-def module_buttons():
-    """Component to display buttons for selecting modules."""
+def task_list(module: MainState.ModuleType):
+    """Render list of tasks for a module."""
     return rx.vstack(
-        *[
-            rx.button(
-                # f"{module['id']}-{module['name']}",  # Display module ID and name
-                rx.text(f"{module['name']}", font_size="20px",weight="bold"),  # Display module name
-                on_click=lambda module_id=module["id"]: State.select_module(module_id),  # Handle module selection
-                margin_top="20px",
-                background=GRAY_LAVANDER,
+        rx.foreach(
+            module.tasks,
+            lambda task: rx.button(
+                f"Задание {task['id']}: {task['text']}",
+                on_click=lambda t=task: MainState.select_task(t["id"], t["text"]),
                 width="100%",
-                color=BLOCK_BACKGROUND,
-                height="50px",
                 padding="10px",
+                background=BUTTON_BACKGROUND,
+                color="white",
                 border_radius="10px",
                 _hover={
-                        "background": INPUT_BACKGROUND,
-                        "color":"white", 
-                    },
-                transition="0.2s linear",
-                
+                    "background": INPUT_BACKGROUND,
+                    "color": "white",
+                },
             )
-            #* we using for bucause we need to create 5 moduls. It's simple way to create this thing
-            for module in MODULES 
-        ],
+        ),
+        spacing="2",
     )
 
-def selected_module_content():
-    """Component to display the content of the selected module."""
+def module_section():
+    """Render module section with expandable task lists."""
     return rx.vstack(
+        rx.heading("Модули", size="1"),
         rx.cond(
-            # Check if the selected module is 1
-            State.selected_module == 1,
-            rx.vstack(
-                rx.text(MODULES[0]["name"], font_size="30px"),  # Display module name
-                task_circles(MODULES[0]["tasks"]),  # Display tasks for module 1
-            ),
-            rx.cond(
-                # Check if the selected module is 2
-                State.selected_module == 2,
-                rx.vstack(
-                    rx.text(MODULES[1]["name"], font_size="30px"),  # Display module name
-                    task_circles(MODULES[1]["tasks"]),  # Display tasks for module 2
-                ),
-                rx.cond(
-                    # Check if the selected module is 3
-                    State.selected_module == 3,
-                    rx.vstack(
-                        rx.text(MODULES[2]["name"], font_size="30px"),  # Display module name
-                        task_circles(MODULES[2]["tasks"]),  # Display tasks for module 3
+            MainState.has_modules,
+            rx.foreach(
+                MainState.modules,
+                lambda module: rx.box(
+                    rx.button(
+                        module.name,
+                        on_click=lambda m=module: MainState.select_module(m.id),
+                        width="100%",
+                        padding="15px",
+                        background=BLOCK_BACKGROUND,
+                        color="white",
+                        border_radius="10px",
+                        _hover={
+                            "background": INPUT_BACKGROUND,
+                            "color": "white",
+                        },
                     ),
                     rx.cond(
-                        # Check if the selected module is 4
-                        State.selected_module == 4,
-                        rx.vstack(
-                            rx.text(MODULES[3]["name"], font_size="30px"),  # Display module name
-                            task_circles(MODULES[3]["tasks"]),  # Display tasks for module 4
-                        ),
-                        rx.vstack(
-                            # Default case: module 5
-                            rx.text(MODULES[4]["name"], font_size="30px"),  # Display module name
-                            task_circles(MODULES[4]["tasks"]),  # Display tasks for module 5
-                        ),
-                    ),
-                ),
+                        MainState.selected_module_id == module.id,
+                        task_list(module),
+                        rx.box()
+                    )
+                )
             ),
+            rx.text("Загрузка модулей...", color="gray.500")
         ),
+        width="100%",
+    )
+
+def header():
+    """Render page header with navigation."""
+    return rx.hstack(
+        rx.hstack(
+            rx.image(src="/logo.png", width="3em", height="3em"),
+            rx.heading("Pro IT", size="1"),
+            spacing="4",
+        ),
+        rx.spacer(),
+        rx.hstack(
+            rx.text(MainState.student_name, font_size="1"),
+            rx.button(
+                "Выйти",
+                on_click=MainState.logout,
+                color_scheme="red",
+                variant="ghost",
+            ),
+            spacing="4",
+        ),
+        width="100%",
+        padding="4",
+        border_bottom="1px solid",
+        border_color="gray.200",
     )
 
 def main():
-    """Main component representing the entire page."""
-    return rx.vstack(
-        #* Header section
-        rx.box(
-            rx.flex(
-                #* logo and title
-                rx.hstack(
-                    rx.image("/logo.png", width="3em", border_radius="10px"),
-                    rx.heading("Pro IT", font_size="2em"),  
-                    align="center", 
+    """Main page layout."""
+    return rx.box(
+        rx.vstack(
+            header(),
+            rx.hstack(
+                rx.vstack(
+                    rx.heading("КУРС", size="1"),
+                    rx.heading(MainState.course_name, size="2"),
+                    module_section(),
+                    width="100%",
+                    max_width="800px",
+                    spacing="6",
+                    padding="6",
                 ),
-                #* username | exit button
-                rx.box(
-                    rx.hstack(
-                        rx.text(
-                            "Никита Сидоров",
-                            font_size="25px", 
-                            color="white",
-                            height="100%",
-                            background_color=GRAY_LAVANDER, 
-                            padding="5px",
-                            border_radius="10px",
-                        ),
-                        
-                        #* exit button
-                        rx.box(
-                            rx.link(
-                               rx.icon(
-                                tag="log-out",
-                                color="red",
-                            ),
-                               href="/login" 
-                            ),
-                            
-                            background="#ff00001a",
-                            width="50px", 
-                            height="50px",
-                            border_radius="10px",
-                            display="flex", 
-                            justify_content="center",
-                            align_items="center",
-                            _hover={"background_color": "#a92525"},
-                            transition="0.2s linear",
-                        ),
-                        
-                    ),
-                    
-                ),
-                justify="between",  
-                align="center",
+                width="100%",
+                justify="center",
             ),
-            width="100%", 
-            align="center",
-            align_self="center",
-        ),
-
-       
-        rx.separator(size="4", background=SEPARATOR_COLOR, margin_top="10px"),
-
-        #* main content
-        rx.hstack(
-            #* left side
-            rx.box(
-                rx.text("КУРС", font_size="30px"),
-                rx.heading("Scratch", font_size="45px"),
-                rx.box(
-                    rx.text("Модули", font_size="30px"),
-                    module_buttons(),  #* Display module buttons
-                    margin_top="50px",
-                ),
-                width="15%", 
-            ),
-
-            rx.divider(orientation="vertical", size="4", height="700px", background=SEPARATOR_COLOR),
-            #* right side
-            rx.box(
-                selected_module_content(),  # Display content for the selected module
-                width="70%",
-            ),
-            spacing="4", 
             width="100%",
-            height="10vh",
+            min_height="100vh",
+            spacing="0",
         ),
-        padding="20px", 
-        color="white", 
-        width="100%",
-        height="100vh",
-        background_color=BACKGROUND,
+        background=BACKGROUND,
+        color="white",
+        on_mount=MainState.on_load,
     )

@@ -1,37 +1,70 @@
 import reflex as rx
 from ..ui.colors import *
 from sqlmodel import Session, select
-from ..database.models import Student, engine
+from ..database.models import Student, Courses, Module, Task, engine
+from ..pages.main import MainState
 
 class LoginInputState(rx.State):
     form_data: dict = {}
 
     @rx.event
-    def handle_submit(self, form_data: dict):
-        self.form_data = form_data
-        print("Form data:", self.form_data)
-        
+    async def handle_submit(self, form_data: dict):
         try:
-            # Get form data
             login = form_data.get("login", "")
             password = form_data.get("password", "")
 
-            # Connect to the database using SQLModel Session
             with Session(engine) as session:
-                # Execute SQL query to find user
-                statement = select(Student).where(Student.login == login, Student.password == password)
+                statement = select(Student).where(
+                    Student.login == login, 
+                    Student.password == password
+                )
                 user = session.exec(statement).first()
 
                 if user:
-                    # Save user data in cookies
-                    # rx.set_cookie("student_id", str(user.id))  # Save student ID
-                    # rx.set_cookie("course", user.course)  # Save course
-                    return rx.redirect("/")  # Redirect to the main page if user is found
+                    # Get main state instance
+                    main_state = await self.get_state(MainState)
+                    
+                    # Reset the state
+                    main_state.reset_state()
+                    
+                    # Get course information
+                    course = session.exec(
+                        select(Courses).where(Courses.name == user.course)
+                    ).first()
+                    
+                    if course:
+                        # Set new state values
+                        main_state.student_name = f"{user.first_name} {user.last_name}"
+                        main_state.course_name = user.course
+                        main_state.current_course_id = course.id
+                        
+                        # Load modules immediately
+                        modules = session.exec(
+                            select(Module).where(Module.course_id == course.id)
+                        ).all()
+                        
+                        main_state.modules = [
+                            main_state.ModuleType(
+                                id=module.id,
+                                name=module.name,
+                                tasks=[
+                                    {"id": str(t.id), "text": t.text}
+                                    for t in session.exec(
+                                        select(Task).where(Task.module_id == module.id)
+                                    ).all()
+                                ]
+                            )
+                            for module in modules
+                        ]
+                        
+                        return rx.redirect("/")
+                    else:
+                        return rx.toast.error("Курс не найден")
                 else:
-                    return rx.toast.error("Неверный логин или пароль!")  # Show error toast if user is not found
+                    return rx.toast.error("Неверный логин или пароль!")
 
         except Exception as e:
-            print(f"Login error: {str(e)}")
+            print(f"Ошибка при входе: {str(e)}")
             return rx.toast.error("Произошла ошибка при входе в систему")
 
 
@@ -47,8 +80,6 @@ def login():
                     border_radius="10px",
                 ),
                 width="50%",
-               
-                
             ),
             rx.box(
                 rx.vstack(
@@ -61,8 +92,7 @@ def login():
                         text_align="center",
                     ),
                     rx.box(
-                        rx.text("Вход в систему",font_size="20px", color="white"),
-                        #! on relize remove .root
+                        rx.text("Вход в систему", font_size="20px", color="white"),
                         rx.form.root(
                             rx.vstack(
                                 rx.input(
@@ -71,7 +101,7 @@ def login():
                                     type="text",
                                     required=True,
                                     style=input_style
-                                    ),
+                                ),
                                 rx.input(
                                     name="password",
                                     placeholder="Пароль...",
@@ -87,7 +117,6 @@ def login():
                                     height="50px",
                                 ),
                                 width="100%",
-                                # gap="30px",
                             ),
                             on_submit=LoginInputState.handle_submit,
                             reset_on_submit=True,
@@ -100,17 +129,13 @@ def login():
                                 color=BUTTON_BACKGROUND,
                                 text_align="center",
                             ),
-                            
                         ),
                     ),
                 ),
                 padding="0px 100px 100px 0px",
-                # width="50%",
                 height="auto",
             ),
-            
             width="900px",
-            # height="0%",  
             spacing="8",  
             padding="15px",
             border_radius="10px",

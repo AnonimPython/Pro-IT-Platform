@@ -1,28 +1,29 @@
-from typing import Dict, List, Optional
 import reflex as rx
 from sqlmodel import Session, select
 from ..database.models import Courses, Module, Task, engine
 from ..ui.colors import *
 from ..ui.admin_pannel import admin_pannel
 from ..ui.cours_card import cours_card
+from typing import Dict, List, Optional
 
-# Состояние для управления курсами, модулями и заданиями
 class CourseState(rx.State):
     """State для управления курсами, модулями и заданиями."""
-    courses: List[Courses] = []  # Список всех курсов
-    current_course: Optional[Courses] = None  # Текущий выбранный курс
-    modules: List[Module] = []  # Модули текущего курса
-    tasks: Dict[int, List[Task]] = {}  # Задания для каждого модуля (ключ - ID модуля)
-    new_task_text: str = ""  # Текст нового задания
-    current_course_id: Optional[int] = None  # ID текущего курса
-    current_module_id: Optional[int] = None  # ID текущего модуля
-    new_course_name: str = ""  # Название нового курса
+    courses: List[Courses] = []
+    current_course: Optional[Courses] = None
+    modules: List[Module] = []
+    tasks: Dict[int, List[Task]] = {}
+    new_task_text: str = ""
+    current_course_id: Optional[int] = None
+    current_module_id: Optional[int] = None
+    new_course_name: str = ""
 
+    @rx.event
     async def load_courses(self):
         """Загрузить все курсы из базы данных."""
         with Session(engine) as session:
             self.courses = session.exec(select(Courses)).all()
 
+    @rx.event
     async def load_course(self):
         """Загрузить выбранный курс и его модули."""
         if self.current_course_id is None:
@@ -30,21 +31,25 @@ class CourseState(rx.State):
         with Session(engine) as session:
             self.current_course = session.get(Courses, self.current_course_id)
             if self.current_course:
+                # Добавляем сортировку по ID
                 self.modules = session.exec(
-                    select(Module).where(Module.course_id == self.current_course_id)
+                    select(Module)
+                    .where(Module.course_id == self.current_course_id)
+                    .order_by(Module.id)
                 ).all()
-                # Загружаем задачи для всех модулей
                 for module in self.modules:
                     await self.load_tasks(module.id)
 
+    @rx.event
     async def load_tasks(self, module_id: int):
         """Загрузить задания для выбранного модуля."""
         with Session(engine) as session:
             tasks = session.exec(
                 select(Task).where(Task.module_id == module_id)
             ).all()
-            self.tasks[module_id] = tasks  # Сохраняем задачи для модуля
+            self.tasks[module_id] = tasks
 
+    @rx.event
     async def add_task(self, module_id: int):
         """Добавить задание в модуль."""
         if not self.new_task_text:
@@ -58,10 +63,11 @@ class CourseState(rx.State):
             session.add(task)
             session.commit()
             session.refresh(task)
-            self.new_task_text = ""  # Очищаем поле ввода
-            await self.load_tasks(module_id)  # Перезагружаем задачи для текущего модуля
+            self.new_task_text = ""
+            await self.load_tasks(module_id)
             return rx.toast.success("Задание успешно добавлено")
 
+    @rx.event
     async def add_course(self):
         """Добавить новый курс и 5 модулей."""
         if not self.new_course_name:
@@ -71,25 +77,29 @@ class CourseState(rx.State):
             # Создаем курс
             course = Courses(
                 name=self.new_course_name,
-                link="",  # Пока оставляем пустым, можно добавить поле для ссылки
+                link="",
             )
             session.add(course)
             session.commit()
             session.refresh(course)
 
-            # Создаем 5 модулей для курса
+            # Создаем 5 модулей для курса с правильной нумерацией
+            modules = []
             for i in range(1, 6):
                 module = Module(
-                    name=f"Модуль {i}",
+                    name=f"Модуль {i}",  # Имя модуля остается 1-5 для каждого курса
                     course_id=course.id,
                 )
-                session.add(module)
+                modules.append(module)
+            
+            session.add_all(modules)
             session.commit()
 
-            self.new_course_name = ""  # Сбрасываем поле ввода
-            await self.load_courses()  # Перезагружаем список курсов
+            self.new_course_name = ""
+            await self.load_courses()
             return rx.toast.success("Курс и модули успешно добавлены")
 
+    @rx.event
     async def delete_task(self, task_id: int):
         """Удалить задание по ID."""
         with Session(engine) as session:
@@ -97,26 +107,22 @@ class CourseState(rx.State):
             if task:
                 session.delete(task)
                 session.commit()
-                await self.load_tasks(task.module_id)  # Перезагружаем задачи для модуля
+                await self.load_tasks(task.module_id)
                 return rx.toast.success("Задание успешно удалено")
             else:
                 return rx.toast.error("Задание не найдено")
 
+    @rx.event
     async def set_course_id_from_route(self):
         """Извлечь course_id из URL и загрузить курс."""
         self.current_course_id = int(self.router.page.params.get("course_id", 0))
         await self.load_course()
 
-# Диалоговое окно для добавления нового курса
 def add_course_dialog() -> rx.Component:
     """Диалоговое окно для добавления нового курса."""
     return rx.dialog.root(
         rx.dialog.trigger(
-            rx.button(
-                "Добавить курс",
-                # background_color=LINK_BACKGROUND_COLOR,
-                # border=f"1px solid {ADMIN_YELLOW}",
-            )
+            rx.button("Добавить курс")
         ),
         rx.dialog.content(
             rx.dialog.title("Добавить новый курс"),
@@ -134,7 +140,7 @@ def add_course_dialog() -> rx.Component:
                 rx.dialog.close(
                     rx.button(
                         "Сохранить",
-                        on_click=CourseState.add_course,  # Используем метод add_course
+                        on_click=CourseState.add_course,
                     ),
                 ),
                 spacing="3",
@@ -142,7 +148,7 @@ def add_course_dialog() -> rx.Component:
             ),
         ),
     )
-#* list of all courses
+
 def courses_list() -> rx.Component:
     """Список всех курсов."""
     return rx.box(
@@ -200,7 +206,6 @@ def courses_list() -> rx.Component:
                 width="100%",
                 height="100%",
             ),
-            
             width="90%",
             height="90vh",
             border_radius="20px",
@@ -216,8 +221,7 @@ def courses_list() -> rx.Component:
         background_color=ADMIN_BACKGROUND_COLOR,
         margin="0 auto",
     )
-    
-    
+
 def course_page() -> rx.Component:
     """Страница курса с модулями и заданиями."""
     def render_task(task, idx):
@@ -235,10 +239,11 @@ def course_page() -> rx.Component:
             padding="5px",
         )
 
-    def render_module(module):
+    def render_module(module, index):  # Added index parameter
+        module_number = index + 1
         return rx.vstack(
             rx.hstack(
-                rx.text(f"Модуль {module.id}: {module.name}", font_size="20px"),
+                rx.text(f"Модуль {module_number}: {module.name}", font_size="20px"),
                 rx.spacer(),
                 rx.dialog.root(
                     rx.dialog.trigger(
@@ -303,9 +308,10 @@ def course_page() -> rx.Component:
                         rx.cond(
                             CourseState.current_course,
                             rx.vstack(
+                                # Here's where we replace the old foreach with the new one
                                 rx.foreach(
                                     CourseState.modules,
-                                    render_module
+                                    lambda m, i: render_module(m, i)
                                 ),
                                 spacing="4",
                                 padding="20px",
